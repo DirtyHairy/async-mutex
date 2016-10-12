@@ -1,0 +1,27 @@
+{
+  "name": "async-mutex",
+  "version": "0.1.0",
+  "description": "A small mutex for guarding async workflows",
+  "scripts": {
+    "prepublish": "tsc",
+    "pretest": "typings install && tsc -p tsconfig.test.json",
+    "test": "mocha -R spec -u tdd test"
+  },
+  "author": "Christian Speckner <cnspeckn@googlemail.com> (https://github.com/DirtyHairy/)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "TODO"
+  },
+  "keywords": [
+    "mutex",
+    "async"
+  ],
+  "devDependencies": {
+    "mocha": "~3.1.0",
+    "typescript": "~2.0.3",
+    "typings": "^1.4.0"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts"
+}
