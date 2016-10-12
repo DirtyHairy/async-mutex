@@ -12,7 +12,7 @@ thread releases the lock, allowing other threads to aquire a lock and access the
 resource.
 
 While Javascript is strictly single-threaded, the asynchronous nature of its
-programming model allows for race conditions that require similar synchronization
+execution model allows for race conditions that require similar synchronization
 primitives. Consider for example a library communicating with a web worker that
 needs to exchange several subsequent messages with the worker in order to achieve
 a task. As these messages are exchanged in an asynchronous manner, it is perfectly
@@ -68,12 +68,17 @@ Create a new mutex.
 
 ES5/ES6/Typescript
 
-    mutex.aquire(function(release) {
+    mutex.acquire(function(release) {
         // ...
     });
 
-`aquire` schedules the supplied callback to be executed once the mutex is unlocked.
-The mutex is locked during execution.
+`acquire` schedules the supplied callback to be executed once the mutex is unlocked.
+The mutex is locked during execution. Once the callback has finished its work, it
+calls `release()` in order to release the mutex.
+
+**IMPORTANT:** `acquire` will not take care of any exceptions throws during execution
+of the callback --- it is your own responsibility to make sure that the mutex is
+released in case of an exception.
 
 ### Synchronized code execution
 
@@ -87,11 +92,14 @@ ES5/ES6/Typescript
             // ...
         });
 
-`runExclusive` schedules a function to be run once the mutex is free. The function
-is epected to return a [Promises/A+](https://promisesaplus.com/) compliant promise.
-Once the promise is resolved (or rejected), the mutex is freed again. `runExclusive`
-returns a promise that adops the state of the function result.
+`runExclusive` schedules the supplied callback to be run once the mutex is unlocked.
+The function is expected to return a [Promises/A+](https://promisesaplus.com/)
+compliant promise. Once the promise is resolved (or rejected), the mutex is released.
+`runExclusive` returns a promise that adops the state of the function result.
 
-# Licenseof 
+The mutex is released and the result rejected if an exception occurs during execution
+if the callback.
+
+# License
 
 Feel free to use this library under the conditions of the MIT license.
