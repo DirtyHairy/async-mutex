@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/DirtyHairy/async-mutex.svg?branch=master)](https://travis-ci.org/DirtyHairy/async-mutex)
+[![npm version](https://badge.fury.io/js/async-mutex.svg)](https://badge.fury.io/js/async-mutex)
+
 # What is it?
 
 This package implements a mutex for synchronizing asynchronous operations in
