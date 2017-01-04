@@ -1,6 +1,6 @@
 {
   "name": "async-mutex",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A mutex for guarding async workflows",
   "scripts": {
     "prepublish": "tsc",
