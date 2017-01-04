@@ -71,17 +71,19 @@ Create a new mutex.
 
 ES5/ES6/Typescript
 
-    mutex.acquire(function(release) {
-        // ...
-    });
+    mutex
+        .acquire()
+        .then(function(release) {
+            // ...
+        });
 
-`acquire` schedules the supplied callback to be executed once the mutex is unlocked.
-The mutex is locked during execution. Once the callback has finished its work, it
-calls `release()` in order to release the mutex.
+`acquire` returns an (ES6) promise that will resolve as soon as the mutex is
+available and ready to be accessed. The promise resolves with a function `release` that
+must be called once the mutex should be released again.
 
-**IMPORTANT:** `acquire` will not take care of any exceptions throws during execution
-of the callback --- it is your own responsibility to make sure that the mutex is
-released in case of an exception.
+**IMPORTANT:** Failure to call `release` will hold the mutex locked and will
+lilely deadlock the application. Make sure to call `release` under all circumstances
+and handle exceptions accordingly.
 
 ### Synchronized code execution
 
