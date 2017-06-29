@@ -2,9 +2,8 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es6",
+        "strict": true,
         "sourceMap": false,
-        "noImplicitAny": true,
-        "noImplicitThis": true,
         "outDir": "build"
     },
     "include": ["test/**/*.ts"],

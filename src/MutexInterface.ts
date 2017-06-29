@@ -8,7 +8,7 @@ interface MutexInterface {
 
 }
 
-module MutexInterface {
+namespace MutexInterface {
 
     export interface Releaser {
         (): void;

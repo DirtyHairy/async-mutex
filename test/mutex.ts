@@ -50,6 +50,7 @@ suite('Mutex', function() {
     test('runExclusive passes exception', function() {
         return mutex
             .runExclusive<number>(() => {
+                // tslint:disable-next-line:no-string-throw
                 throw 'foo';
             })
             .then(

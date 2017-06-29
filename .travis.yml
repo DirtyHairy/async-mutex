@@ -1,3 +1,9 @@
 language: node_js
 node_js:
     - node
+cache:
+    yarn: true
+before-script:
+    - yarn install
+script:
+    - yarn test

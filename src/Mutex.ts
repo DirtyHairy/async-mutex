@@ -45,7 +45,7 @@ class Mutex implements MutexInterface {
     private _dispatchNext(): void {
         if (this._queue.length > 0) {
             this._pending = true;
-            this._queue.shift()(this._dispatchNext.bind(this));
+            this._queue.shift()!(this._dispatchNext.bind(this));
         } else {
             this._pending = false;
         }

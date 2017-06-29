@@ -3,11 +3,10 @@
         "module": "commonjs",
         "target": "es5",
         "sourceMap": false,
-        "noImplicitAny": true,
-        "noImplicitThis": true,
+        "strict": true,
         "declaration": true,
         "outDir": "lib",
-        "lib": ["es5", "es6"]
+        "lib": ["es6"]
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]
