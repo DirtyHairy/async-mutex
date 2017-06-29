@@ -5,6 +5,7 @@
         "sourceMap": false,
         "noImplicitAny": true,
         "noImplicitThis": true,
+        "outDir": "build",
         "lib": ["es5", "es6", "dom"]
     },
     "include": ["test/**/*.ts"],

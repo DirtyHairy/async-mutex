@@ -3,7 +3,7 @@ import MutexInterface from './MutexInterface';
 class Mutex implements MutexInterface {
 
     acquire(): Promise<MutexInterface.Releaser> {
-        const ticket = new Promise(resolve => this._queue.push(resolve));
+        const ticket = new Promise<MutexInterface.Releaser>(resolve => this._queue.push(resolve));
 
         if (!this._pending) {
             this._dispatchNext();

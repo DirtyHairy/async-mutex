@@ -4,8 +4,8 @@
   "description": "A mutex for guarding async workflows",
   "scripts": {
     "prepublish": "tsc",
-    "pretest": "typings install && tsc -p tsconfig.test.json",
-    "test": "mocha -R spec -u tdd test"
+    "pretest": "tsc -p tsconfig.test.json",
+    "test": "mocha -R spec -u tdd build/test"
   },
   "author": "Christian Speckner <cnspeckn@googlemail.com> (https://github.com/DirtyHairy/)",
   "license": "MIT",
@@ -18,10 +18,13 @@
     "async"
   ],
   "devDependencies": {
-    "mocha": "~3.1.0",
-    "typescript": "~2.0.3",
-    "typings": "~1.4.0"
+    "mocha": "~3.4.2",
+    "typescript": "~2.4.1"
   },
   "main": "lib/index.js",
-  "types": "lib/index.d.ts"
+  "types": "lib/index.d.ts",
+  "dependencies": {
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.5"
+  }
 }

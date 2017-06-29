@@ -1,5 +1,3 @@
 node_modules
 lib
-test/*.js
-src/*.js
-typings
+build
