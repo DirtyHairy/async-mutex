@@ -2,6 +2,10 @@ import MutexInterface from './MutexInterface';
 
 class Mutex implements MutexInterface {
 
+    isLocked(): boolean {
+        return this._pending;
+    }
+
     acquire(): Promise<MutexInterface.Releaser> {
         const ticket = new Promise<MutexInterface.Releaser>(resolve => this._queue.push(resolve));
 

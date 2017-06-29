@@ -85,4 +85,31 @@ suite('Mutex', function() {
         return mutex.runExclusive(() => assert(flag));
     });
 
+    test('new mutex is unlocked', function() {
+        assert(!mutex.isLocked());
+    });
+
+    test('isLocked reflects the mutex state', async function() {
+        const lock1 = mutex.acquire(),
+            lock2 = mutex.acquire();
+
+        assert(mutex.isLocked());
+
+        const releaser1 = await lock1;
+
+        assert(mutex.isLocked());
+
+        releaser1();
+
+        assert(mutex.isLocked());
+
+        const releaser2 = await lock2;
+
+        assert(mutex.isLocked());
+
+        releaser2();
+
+        assert(!mutex.isLocked());
+    });
+
 });
