@@ -105,6 +105,12 @@ compliant promise. Once the promise is resolved (or rejected), the mutex is rele
 The mutex is released and the result rejected if an exception occurs during execution
 if the callback.
 
+### Checking whether the mutex is locked
+
+ES5/ES6/Typescript
+
+    mutex.isLocked();
+
 # License
 
 Feel free to use this library under the conditions of the MIT license.
