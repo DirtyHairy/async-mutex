@@ -14,3 +14,8 @@
  * Add tslint
  * Switch tests to use ES6
  * Add isLocked()
+
+## 0.1.3
+
+ * Move deps to devDependencies (thanks to Meirion Hughes for the PR)
+ * Upgrade deps
