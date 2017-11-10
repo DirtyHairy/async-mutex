@@ -90,6 +90,17 @@ must be called once the mutex should be released again.
 lilely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
+#### Async function example (ESnext/Typescript)
+```typescript
+const release = await mutex.acquire();
+try {
+    const i = await store.get();
+    await store.put(i + 1);
+} finally {
+    release();
+}
+```
+
 ### Synchronized code execution
 
 ES5/ES6/Typescript
