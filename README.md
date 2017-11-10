@@ -37,11 +37,11 @@ You can install the library into your project via npm
 
     npm install async-mutex
 
-The library is written in Typescript and will work in any environment that
+The library is written in TypeScript and will work in any environment that
 supports ES5 and ES6 promises. If ES6 promises are not supported natively,
 a shim can be used (e.g. [core-js](https://github.com/zloirock/core-js)).
 No external typings are required for using this library with
-Typescript (version >= 2).
+TypeScript (version >= 2).
 
 ## Importing
 
@@ -55,7 +55,7 @@ ES6
 import {Mutex} from 'async-mutex';
 ```
 
-Typescript
+TypeScript
 ```typescript
 import {Mutex, MutexInterface} from 'async-mutex';
 ```
@@ -64,7 +64,7 @@ import {Mutex, MutexInterface} from 'async-mutex';
 
 ### Creating
 
-ES5/ES6/Typescript
+ES5/ES6/TypeScript
 ```typescript
 const mutex = new Mutex();
 ```
@@ -73,7 +73,7 @@ Create a new mutex.
 
 ### Locking
 
-ES5/ES6/Typescript
+ES5/ES6/TypeScript
 ```typescript
 mutex
     .acquire()
@@ -90,7 +90,7 @@ must be called once the mutex should be released again.
 lilely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
-#### Async function example (ESnext/Typescript)
+#### Async function example (ESnext/TypeScript)
 ```typescript
 const release = await mutex.acquire();
 try {
@@ -103,7 +103,7 @@ try {
 
 ### Synchronized code execution
 
-ES5/ES6/Typescript
+ES5/ES6/TypeScript
 ```typescript
 mutex
     .runExclusive(function() {
@@ -124,7 +124,7 @@ if the callback.
 
 ### Checking whether the mutex is locked
 
-ES5/ES6/Typescript
+ES5/ES6/TypeScript
 ```typescript
 mutex.isLocked();
 ```
