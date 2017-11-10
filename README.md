@@ -90,7 +90,8 @@ must be called once the mutex should be released again.
 lilely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
-#### Async function example (ESnext/TypeScript)
+##### Async function example (ESnext/TypeScript)
+
 ```typescript
 const release = await mutex.acquire();
 try {
@@ -112,6 +113,18 @@ mutex
     .then(function(result) {
         // ...
     });
+```
+
+##### Async function example (ESnext/TypeScript)
+
+This example is equivalent to the `async`/`await` example that
+locks the mutex directly:
+
+```typescript
+await mutex.runExclusive(async () => {
+    const i = await store.get();
+    await store.put(i + 1);
+});
 ```
 
 `runExclusive` schedules the supplied callback to be run once the mutex is unlocked.
