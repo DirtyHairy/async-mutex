@@ -10,6 +10,7 @@ class Mutex implements MutexInterface {
         const ticket = new Promise<MutexInterface.Releaser>(resolve => this._queue.push(resolve));
 
         if (!this._pending) {
+            this._pending = true;
             this._dispatchNext();
         }
 
@@ -42,12 +43,12 @@ class Mutex implements MutexInterface {
             );
     }
 
-    private _dispatchNext(): void {
-        if (this._queue.length > 0) {
-            this._pending = true;
-            this._queue.shift()!(this._dispatchNext.bind(this));
-        } else {
+    private _dispatchNext = () => {
+        const next = this._queue.shift();
+        if (next === undefined) {
             this._pending = false;
+        } else {
+            next(this._dispatchNext);
         }
     }
 
