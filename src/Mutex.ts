@@ -16,30 +16,15 @@ class Mutex implements MutexInterface {
         return ticket;
     }
 
-    runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T> {
-        return this
-            .acquire()
-            .then(release => {
-                    let result: T|Promise<T>;
-
-                    try {
-                        result = callback();
-                    } catch (e) {
-                        release();
-                        throw(e);
-                    }
-
-                    return Promise
-                        .resolve(result)
-                        .then(
-                            (x: T) => (release(), x),
-                            e => {
-                                release();
-                                throw e;
-                            }
-                        );
-                }
-            );
+    async runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T> {
+        const release = await this.acquire();
+        try {
+            return await callback();
+        } catch (e) {
+            throw e;   
+        } finally {
+            release();     
+        }
     }
 
     private _dispatchNext(): void {
