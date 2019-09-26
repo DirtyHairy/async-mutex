@@ -21,11 +21,11 @@
     "lib"
   ],
   "devDependencies": {
-    "@types/mocha": "^2.2.41",
-    "@types/node": "^8.0.5",
-    "mocha": "^3.4.2",
-    "tslint": "^5.4.3",
-    "typescript": "^2.4.1"
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.7.8",
+    "mocha": "^6.2.0",
+    "tslint": "^5.20.0",
+    "typescript": "^3.6.3"
   },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
