@@ -8,7 +8,7 @@ Javascript.
 
 The term "mutex" usually refers to a data structure used to synchronize
 concurrent processes running on different threads. For example, before accessing
-a non-threadsafe resource, a thread will lock the mutex. This is guranteed
+a non-threadsafe resource, a thread will lock the mutex. This is guaranteed
 to block the thread until no other thread holds a lock on the mutex and thus
 enforces exclusive access to the resource. Once the operation is complete, the
 thread releases the lock, allowing other threads to aquire a lock and access the
@@ -130,7 +130,7 @@ await mutex.runExclusive(async () => {
 `runExclusive` schedules the supplied callback to be run once the mutex is unlocked.
 The function is expected to return a [Promises/A+](https://promisesaplus.com/)
 compliant promise. Once the promise is resolved (or rejected), the mutex is released.
-`runExclusive` returns a promise that adops the state of the function result.
+`runExclusive` returns a promise that adopts the state of the function result.
 
 The mutex is released and the result rejected if an exception occurs during execution
 if the callback.
