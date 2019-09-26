@@ -19,3 +19,8 @@
 
  * Move deps to devDependencies (thanks to Meirion Hughes for the PR)
  * Upgrade deps
+
+## 0.1.4
+
+ * Documentation updates (thanks to hmil and 0xflotus)
+ * Update build dependencies
