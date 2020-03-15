@@ -55,7 +55,7 @@ ES6
 import {Mutex} from 'async-mutex';
 ```
 
-Be aware that `async-mutex` is a commonjs package, though, and that the named exports will not work with the ES module implementation yet.
+Be aware that `async-mutex` is a commonjs package, though, and that the named exports will not work with the ES module implementation in Node 13 yet.
 
 TypeScript
 ```typescript
