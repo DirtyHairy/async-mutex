@@ -1,0 +1,5 @@
+{
+    "[typescript]": {
+        "editor.formatOnSave": true
+    }
+}

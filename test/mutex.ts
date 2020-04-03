@@ -1,96 +1,112 @@
 import * as assert from 'assert';
 
 import Mutex from '../src/Mutex';
+import { install } from '@sinonjs/fake-timers';
+
+const clock = install();
+
+const withTimer = (test: () => Promise<void>) => async () => {
+    const result = test();
+
+    await clock.runAllAsync();
+
+    return result;
+};
 
 suite('Mutex', function() {
-
     let mutex: Mutex;
 
-    setup(() => mutex = new Mutex());
+    setup(() => (mutex = new Mutex()));
 
-    test('ownership is exclusive', function() {
-        let flag = false;
+    test(
+        'ownership is exclusive',
+        withTimer(async () => {
+            let flag = false;
 
-        mutex
-            .acquire()
-            .then(release => setTimeout(() => {
+            const release = await mutex.acquire();
+
+            setTimeout(() => {
                 flag = true;
                 release();
-            }, 50));
+            }, 50);
 
-        return mutex.acquire()
-            .then((release) => {
-                release();
+            assert(!flag);
 
-                assert(flag);
-            });
+            (await mutex.acquire())();
+
+            assert(flag);
+        })
+    );
+
+    test('runExclusive passes result (immediate)', async () => {
+        assert.strictEqual(await mutex.runExclusive(() => 10), 10);
     });
 
-    test('runExclusive passes result (immediate)', function() {
-        return mutex
-            .runExclusive<number>(() => 10)
-            .then(value => assert.strictEqual(value, 10));
+    test('runExclusive passes result (promise)', async () => {
+        assert.strictEqual(await mutex.runExclusive(() => Promise.resolve(10)), 10);
     });
 
-    test('runExclusive passes result (promise)', function() {
-        return mutex
-            .runExclusive<number>(() => Promise.resolve(10))
-            .then(value => assert.strictEqual(value, 10));
+    test('runExclusive passes rejection', async () => {
+        await assert.rejects(
+            mutex.runExclusive(() => Promise.reject(new Error('foo'))),
+            new Error('foo')
+        );
     });
 
-    test('runExclusive passes rejection', function() {
-        return mutex
-            .runExclusive<number>(() => Promise.reject('foo'))
-            .then(
-                () => Promise.reject('should have been rejected'),
-                value => assert.strictEqual(value, 'foo')
+    test('runExclusive passes exception', async () => {
+        await assert.rejects(
+            mutex.runExclusive(() => {
+                throw new Error('foo');
+            }),
+            new Error('foo')
+        );
+    });
+
+    test(
+        'runExclusive is exclusive',
+        withTimer(async () => {
+            let flag = false;
+
+            mutex.runExclusive(
+                () =>
+                    new Promise(resolve =>
+                        setTimeout(() => {
+                            flag = true;
+                            resolve();
+                        }, 50)
+                    )
             );
-    });
 
-    test('runExclusive passes exception', function() {
-        return mutex
-            .runExclusive<number>(() => {
-                // tslint:disable-next-line:no-string-throw
-                throw 'foo';
-            })
-            .then(
-                () => Promise.reject('should have been rejected'),
-                value => assert.strictEqual(value, 'foo')
-            );
-    });
+            assert(!flag);
 
-    test('runExclusive is exclusive', function() {
+            await mutex.runExclusive(() => undefined);
+
+            assert(flag);
+        })
+    );
+
+    test('exceptions during runExclusive do not leave mutex locked', async () => {
         let flag = false;
 
         mutex
-            .runExclusive(() => new Promise(
-            resolve => setTimeout(
-                () => {
-                    flag = true;
-                    resolve();
-                }, 50
-            )
-        ));
+            .runExclusive<number>(() => {
+                flag = true;
+                throw new Error();
+            })
+            .then(undefined, () => undefined);
 
-        return mutex.runExclusive(() => assert(flag));
+        assert(!flag);
+
+        await mutex.runExclusive(() => undefined);
+
+        assert(flag);
     });
 
-    test('exceptions during runExclusive do not leave mutex locked', function() {
-        let flag = false;
-
-        mutex.runExclusive<number>(() => {
-            flag = true;
-            throw new Error();
-        }).then(() => undefined, () => undefined);
-
-        return mutex.runExclusive(() => assert(flag));
-    });
-
-    test('new mutex is unlocked', function() {
+    test('new mutex is unlocked', () => {
         assert(!mutex.isLocked());
     });
 
-    test('isLocked reflects the mutex state', async function() {
+    test('isLocked reflects the mutex state', async () => {
         const lock1 = mutex.acquire(),
             lock2 = mutex.acquire();
 
@@ -112,5 +128,4 @@ suite('Mutex', function() {
 
         assert(!mutex.isLocked());
     });
-
 });

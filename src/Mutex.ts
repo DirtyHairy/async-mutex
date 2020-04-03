@@ -1,7 +1,6 @@
 import MutexInterface from './MutexInterface';
 
 class Mutex implements MutexInterface {
-
     isLocked(): boolean {
         return this._pending;
     }
@@ -17,29 +16,24 @@ class Mutex implements MutexInterface {
     }
 
     runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T> {
-        return this
-            .acquire()
-            .then(release => {
-                    let result: T|Promise<T>;
+        return this.acquire().then(release => {
+            let result: T | Promise<T>;
 
-                    try {
-                        result = callback();
-                    } catch (e) {
-                        release();
-                        throw(e);
-                    }
+            try {
+                result = callback();
+            } catch (e) {
+                release();
+                throw e;
+            }
 
-                    return Promise
-                        .resolve(result)
-                        .then(
-                            (x: T) => (release(), x),
-                            e => {
-                                release();
-                                throw e;
-                            }
-                        );
+            return Promise.resolve(result).then(
+                (x: T) => (release(), x),
+                e => {
+                    release();
+                    throw e;
                 }
             );
+        });
     }
 
     private _dispatchNext(): void {
@@ -53,7 +47,6 @@ class Mutex implements MutexInterface {
 
     private _queue: Array<(release: MutexInterface.Releaser) => void> = [];
     private _pending = false;
-
 }
 
 export default Mutex;
