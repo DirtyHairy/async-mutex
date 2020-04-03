@@ -9,6 +9,9 @@
         "declaration": true,
         "outDir": "lib",
         "importHelpers": true,
+        "noImplicitThis": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
         "allowSyntheticDefaultImports": true
     },
     "include": ["src/**/*.ts"],

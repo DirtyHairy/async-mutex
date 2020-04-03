@@ -1,2 +1,5 @@
 export { default as Mutex } from './Mutex';
 export { default as MutexInterface } from './MutexInterface';
+export { default as Semaphore } from './Semaphore';
+export { default as SemaphoreInterface } from './SemaphoreInterface';
+export { wasTimeout, withTimeout } from './withTimeout';
