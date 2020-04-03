@@ -1,15 +1,13 @@
 import MutexInterface from './MutexInterface';
 import SemaphoreInterface from './SemaphoreInterface';
 
-const TIMEOUT_ERROR = new Error('Timeout');
-
-export function wasTimeout(error: Error): boolean {
-    return error === TIMEOUT_ERROR;
-}
-
-export function withTimeout(mutex: MutexInterface, timeout: number): MutexInterface;
-export function withTimeout(semaphore: SemaphoreInterface, timeout: number): SemaphoreInterface;
-export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number) {
+export function withTimeout(mutex: MutexInterface, timeout: number, timeoutError?: Error): MutexInterface;
+export function withTimeout(semaphore: SemaphoreInterface, timeout: number, timeoutError?: Error): SemaphoreInterface;
+export function withTimeout(
+    sync: MutexInterface | SemaphoreInterface,
+    timeout: number,
+    timeoutError = new Error('timeout')
+) {
     return {
         acquire: (): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> =>
             new Promise(async (resolve, reject) => {
@@ -17,7 +15,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
 
                 setTimeout(() => {
                     isTimeout = true;
-                    reject(TIMEOUT_ERROR);
+                    reject(timeoutError);
                 }, timeout);
 
                 const ticket = await sync.acquire();
