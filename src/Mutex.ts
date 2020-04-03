@@ -1,52 +1,22 @@
 import MutexInterface from './MutexInterface';
+import Semaphore from './Semaphore';
 
 class Mutex implements MutexInterface {
-    isLocked(): boolean {
-        return this._pending;
-    }
+    async acquire(): Promise<MutexInterface.Releaser> {
+        const [, releaser] = await this._semaphore.acquire();
 
-    acquire(): Promise<MutexInterface.Releaser> {
-        const ticket = new Promise<MutexInterface.Releaser>(resolve => this._queue.push(resolve));
-
-        if (!this._pending) {
-            this._dispatchNext();
-        }
-
-        return ticket;
+        return releaser;
     }
 
     runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T> {
-        return this.acquire().then(release => {
-            let result: T | Promise<T>;
-
-            try {
-                result = callback();
-            } catch (e) {
-                release();
-                throw e;
-            }
-
-            return Promise.resolve(result).then(
-                (x: T) => (release(), x),
-                e => {
-                    release();
-                    throw e;
-                }
-            );
-        });
+        return this._semaphore.runExclusive(() => callback());
     }
 
-    private _dispatchNext(): void {
-        if (this._queue.length > 0) {
-            this._pending = true;
-            this._queue.shift()!(this._dispatchNext.bind(this));
-        } else {
-            this._pending = false;
-        }
+    isLocked(): boolean {
+        return this._semaphore.isLocked();
     }
 
-    private _queue: Array<(release: MutexInterface.Releaser) => void> = [];
-    private _pending = false;
+    private _semaphore = new Semaphore(1);
 }
 
 export default Mutex;
