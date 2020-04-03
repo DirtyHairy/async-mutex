@@ -3,7 +3,7 @@
   "version": "0.1.4",
   "description": "A mutex for guarding async workflows",
   "scripts": {
-    "build": "tslint src/**/*.ts test/**/*.ts && tsc && tsc -p tsconfig.es6.json && rollup -o index.mjs es6/index.js",
+    "build": "tslint src/**/*.ts test/**/*.ts && tsc && tsc -p tsconfig.es6.json && tsc -p tsconfig.mjs.json && rollup -o index.mjs mjs/index.js",
     "prepublish": "yarn build",
     "test": "mocha --require ts-node/register -R spec -u tdd test/*"
   },
@@ -44,5 +44,7 @@
     "import": "./index.mjs",
     "require": "./lib/index.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "tslib": "^1.11.1"
+  }
 }

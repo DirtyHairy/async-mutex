@@ -3,10 +3,12 @@
         "module": "commonjs",
         "target": "es5",
         "lib": ["es6"],
+        "moduleResolution": "node",
         "sourceMap": false,
         "strict": true,
         "declaration": true,
         "outDir": "lib",
+        "importHelpers": true,
         "allowSyntheticDefaultImports": true
     },
     "include": ["src/**/*.ts"],
