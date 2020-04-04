@@ -3,9 +3,10 @@
   "version": "0.1.4",
   "description": "A mutex for guarding async workflows",
   "scripts": {
-    "build": "tslint src/**/*.ts test/**/*.ts && tsc && tsc -p tsconfig.es6.json && tsc -p tsconfig.mjs.json && rollup -o index.mjs mjs/index.js",
-    "prepublish": "yarn build",
-    "test": "mocha --require ts-node/register -R spec -u tdd test/*"
+    "lint": "eslint src/**/*.ts test/**/*.ts",
+    "build": "tsc && tsc -p tsconfig.es6.json && tsc -p tsconfig.mjs.json && rollup -o index.mjs mjs/index.js",
+    "prepublish": "yarn test && yarn build",
+    "test": "yarn lint && mocha --require ts-node/register -R spec -u tdd test/*"
   },
   "author": "Christian Speckner <cnspeckn@googlemail.com> (https://github.com/DirtyHairy/)",
   "license": "MIT",
@@ -16,7 +17,31 @@
   "prettier": {
     "printWidth": 120,
     "tabWidth": 4,
-    "singleQuote": true
+    "singleQuote": true,
+    "parser": "typescript"
+  },
+  "importSort": {
+    ".js, .jsx, .ts, .tsx": {
+      "style": "eslint",
+      "parser": "typescript"
+    }
+  },
+  "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+      "eqeqeq": "error",
+      "@typescript-eslint/no-namespace": "off",
+      "no-async-promise-executor": "off"
+    }
   },
   "keywords": [
     "mutex",
@@ -30,11 +55,15 @@
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.11.0",
     "@types/sinonjs__fake-timers": "^6.0.1",
+    "@typescript-eslint/eslint-plugin": "^2.26.0",
+    "@typescript-eslint/parser": "^2.26.0",
+    "eslint": "^6.8.0",
+    "import-sort-style-eslint": "^6.0.0",
     "mocha": "^7.1.1",
     "prettier": "^2.0.2",
+    "prettier-plugin-import-sort": "^0.0.4",
     "rollup": "^2.3.2",
     "ts-node": "^8.8.1",
-    "tslint": "^6.1.1",
     "typescript": "^3.6.3"
   },
   "main": "lib/index.js",

@@ -5,7 +5,7 @@ import { install } from '@sinonjs/fake-timers';
 
 const clock = install();
 
-const withTimer = (test: () => Promise<void>) => async () => {
+const withTimer = (test: () => Promise<void>) => async (): Promise<void> => {
     const result = test();
 
     await clock.runAllAsync();
@@ -13,7 +13,7 @@ const withTimer = (test: () => Promise<void>) => async () => {
     return result;
 };
 
-suite('Mutex', function() {
+suite('Mutex', () => {
     let mutex: Mutex;
 
     setup(() => (mutex = new Mutex()));
@@ -69,7 +69,7 @@ suite('Mutex', function() {
 
             mutex.runExclusive(
                 () =>
-                    new Promise(resolve =>
+                    new Promise((resolve) =>
                         setTimeout(() => {
                             flag = true;
                             resolve();

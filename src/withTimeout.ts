@@ -3,6 +3,7 @@ import SemaphoreInterface from './SemaphoreInterface';
 
 export function withTimeout(mutex: MutexInterface, timeout: number, timeoutError?: Error): MutexInterface;
 export function withTimeout(semaphore: SemaphoreInterface, timeout: number, timeoutError?: Error): SemaphoreInterface;
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function withTimeout(
     sync: MutexInterface | SemaphoreInterface,
     timeout: number,
