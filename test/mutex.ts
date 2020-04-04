@@ -11,14 +11,14 @@ export const mutexSuite = (factory: () => MutexInterface): void => {
     let clock: InstalledClock;
 
     setup(() => {
-        mutex = factory();
         clock = install();
+        mutex = factory();
     });
 
     teardown(() => clock.uninstall());
 
     test('ownership is exclusive', () =>
-        withTimer(clock)(async () => {
+        withTimer(clock, async () => {
             let flag = false;
 
             const release = await mutex.acquire();
@@ -60,7 +60,7 @@ export const mutexSuite = (factory: () => MutexInterface): void => {
     });
 
     test('runExclusive is exclusive', () =>
-        withTimer(clock)(async () => {
+        withTimer(clock, async () => {
             let flag = false;
 
             mutex.runExclusive(

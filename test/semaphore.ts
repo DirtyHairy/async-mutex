@@ -11,8 +11,8 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     let clock: InstalledClock;
 
     setup(() => {
-        semaphore = factory();
         clock = install();
+        semaphore = factory();
     });
 
     teardown(() => clock.uninstall());
@@ -127,8 +127,10 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     });
 
     test('runExclusive is exclusive', () =>
-        withTimer(clock)(async () => {
+        withTimer(clock, async () => {
             let flag = false;
+
+            semaphore.acquire();
 
             semaphore.runExclusive(
                 () =>
@@ -149,6 +151,8 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
 
     test('exceptions during runExclusive do not leave semaphore locked', async () => {
         let flag = false;
+
+        semaphore.acquire();
 
         semaphore
             .runExclusive<number>(() => {

@@ -39,11 +39,11 @@ export function withTimeout(
                 if (Array.isArray(ticket)) {
                     release = ticket[1];
 
-                    return callback(ticket[0]);
+                    return await callback(ticket[0]);
                 } else {
                     release = ticket;
 
-                    return callback();
+                    return await callback();
                 }
             } finally {
                 release();
