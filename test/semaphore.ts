@@ -47,6 +47,17 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
         assert.deepEqual(values.sort(), [1, 1, 2]);
     });
 
+    test('the semaphore increments again after a release', async () => {
+        semaphore.acquire().then(([, release]) => setTimeout(release, 100));
+        semaphore.acquire().then(([, release]) => setTimeout(release, 200));
+
+        await clock.tickAsync(250);
+
+        const [value] = await semaphore.acquire();
+
+        assert.strictEqual(value, 2);
+    });
+
     test('release is idempotent', async () => {
         const values: Array<number> = [];
 
