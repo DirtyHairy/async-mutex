@@ -80,6 +80,16 @@ suite('Semaphore', () => {
         assert.deepEqual(values.sort(), [1, 1, 1, 2]);
     });
 
+    test('runExclusive passes semaphore value', async () => {
+        let value = -1;
+
+        semaphore.runExclusive((v) => (value = v));
+
+        await clock.tickAsync(0);
+
+        assert.strictEqual(value, 2);
+    });
+
     test('runExclusive passes result (immediate)', async () => {
         assert.strictEqual(await semaphore.runExclusive(() => 10), 10);
     });
