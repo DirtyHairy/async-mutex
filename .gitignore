@@ -3,3 +3,5 @@ lib
 es6
 mjs
 index.mjs
+coverage
+.nyc_output

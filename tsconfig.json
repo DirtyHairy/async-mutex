@@ -4,7 +4,7 @@
         "target": "es5",
         "lib": ["es6"],
         "moduleResolution": "node",
-        "sourceMap": false,
+        "sourceMap": true,
         "strict": true,
         "declaration": true,
         "outDir": "lib",

@@ -183,4 +183,11 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     });
 };
 
-suite('Semaphore', () => semaphoreSuite(() => new Semaphore(2)));
+suite('Semaphore', () => {
+    semaphoreSuite(() => new Semaphore(2));
+
+    test('Semaphore constructor throws if value <= 0', () => {
+        assert.throws(() => new Semaphore(0));
+        assert.throws(() => new Semaphore(-1));
+    });
+});

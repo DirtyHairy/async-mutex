@@ -6,7 +6,7 @@
     "lint": "eslint src/**/*.ts test/**/*.ts",
     "build": "tsc && tsc -p tsconfig.es6.json && tsc -p tsconfig.mjs.json && rollup -o index.mjs mjs/index.js",
     "prepublish": "yarn test && yarn build",
-    "test": "yarn lint && mocha test/*.ts"
+    "test": "yarn lint && nyc --reporter=text --reporter=html mocha test/*.ts"
   },
   "author": "Christian Speckner <cnspeckn@googlemail.com> (https://github.com/DirtyHairy/)",
   "license": "MIT",
@@ -60,6 +60,7 @@
     "eslint": "^6.8.0",
     "import-sort-style-eslint": "^6.0.0",
     "mocha": "^7.1.1",
+    "nyc": "^15.0.1",
     "prettier": "^2.0.2",
     "prettier-plugin-import-sort": "^0.0.4",
     "rollup": "^2.3.2",
