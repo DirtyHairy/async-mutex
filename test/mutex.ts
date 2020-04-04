@@ -3,14 +3,15 @@ import * as assert from 'assert';
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
 import Mutex from '../src/Mutex';
+import MutexInterface from '../src/MutexInterface';
 import { withTimer } from './util';
 
-suite('Mutex', () => {
-    let mutex: Mutex;
+export const mutexSuite = (factory: () => MutexInterface): void => {
+    let mutex: MutexInterface;
     let clock: InstalledClock;
 
     setup(() => {
-        mutex = new Mutex();
+        mutex = factory();
         clock = install();
     });
 
@@ -122,4 +123,6 @@ suite('Mutex', () => {
 
         assert(!mutex.isLocked());
     });
-});
+};
+
+suite('Mutex', () => mutexSuite(() => new Mutex()));

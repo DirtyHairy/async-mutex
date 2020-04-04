@@ -3,14 +3,15 @@ import * as assert from 'assert';
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
 import Semaphore from '../src/Semaphore';
+import SemaphoreInterface from '../src/SemaphoreInterface';
 import { withTimer } from './util';
 
-suite('Semaphore', () => {
-    let semaphore: Semaphore;
+export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
+    let semaphore: SemaphoreInterface;
     let clock: InstalledClock;
 
     setup(() => {
-        semaphore = new Semaphore(2);
+        semaphore = factory();
         clock = install();
     });
 
@@ -180,4 +181,6 @@ suite('Semaphore', () => {
 
         assert(!semaphore.isLocked());
     });
-});
+};
+
+suite('Semaphore', () => semaphoreSuite(() => new Semaphore(2)));
