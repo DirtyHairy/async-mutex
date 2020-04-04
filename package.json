@@ -6,7 +6,7 @@
     "lint": "eslint src/**/*.ts test/**/*.ts",
     "build": "tsc && tsc -p tsconfig.es6.json && tsc -p tsconfig.mjs.json && rollup -o index.mjs mjs/index.js",
     "prepublish": "yarn test && yarn build",
-    "test": "yarn lint && mocha --require ts-node/register -R spec -u tdd test/*"
+    "test": "yarn lint && mocha test/*.ts"
   },
   "author": "Christian Speckner <cnspeckn@googlemail.com> (https://github.com/DirtyHairy/)",
   "license": "MIT",

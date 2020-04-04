@@ -1,26 +1,23 @@
 import * as assert from 'assert';
 
+import { InstalledClock, install } from '@sinonjs/fake-timers';
+
 import Mutex from '../src/Mutex';
-import { install } from '@sinonjs/fake-timers';
-
-const clock = install();
-
-const withTimer = (test: () => Promise<void>) => async (): Promise<void> => {
-    const result = test();
-
-    await clock.runAllAsync();
-
-    return result;
-};
+import { withTimer } from './util';
 
 suite('Mutex', () => {
     let mutex: Mutex;
+    let clock: InstalledClock;
 
-    setup(() => (mutex = new Mutex()));
+    setup(() => {
+        mutex = new Mutex();
+        clock = install();
+    });
 
-    test(
-        'ownership is exclusive',
-        withTimer(async () => {
+    teardown(() => clock.uninstall());
+
+    test('ownership is exclusive', () =>
+        withTimer(clock)(async () => {
             let flag = false;
 
             const release = await mutex.acquire();
@@ -35,8 +32,7 @@ suite('Mutex', () => {
             (await mutex.acquire())();
 
             assert(flag);
-        })
-    );
+        }));
 
     test('runExclusive passes result (immediate)', async () => {
         assert.strictEqual(await mutex.runExclusive(() => 10), 10);
@@ -62,9 +58,8 @@ suite('Mutex', () => {
         );
     });
 
-    test(
-        'runExclusive is exclusive',
-        withTimer(async () => {
+    test('runExclusive is exclusive', () =>
+        withTimer(clock)(async () => {
             let flag = false;
 
             mutex.runExclusive(
@@ -82,8 +77,7 @@ suite('Mutex', () => {
             await mutex.runExclusive(() => undefined);
 
             assert(flag);
-        })
-    );
+        }));
 
     test('exceptions during runExclusive do not leave mutex locked', async () => {
         let flag = false;
