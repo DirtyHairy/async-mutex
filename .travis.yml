@@ -5,6 +5,7 @@ cache:
     yarn: true
 before-script:
     - yarn install
+after_success: 'npm run coveralls'
 script:
     - yarn test
     - yarn build
