@@ -114,8 +114,7 @@ async/await:
 ```typescript
 const release = await mutex.acquire();
 try {
-    const i = await store.get();
-    await store.put(i + 1);
+    // ...
 } finally {
     release();
 }
