@@ -3,8 +3,10 @@
 
 # What is it?
 
-This package implements a mutex for synchronizing asynchronous operations in
+This package implements primitives for synchronizing asynchronous operations in
 Javascript.
+
+## Mutex
 
 The term "mutex" usually refers to a data structure used to synchronize
 concurrent processes running on different threads. For example, before accessing
@@ -24,10 +26,31 @@ way state is handled during the async process, this will lead to race conditions
 that are hard to fix and even harder to track down.
 
 This library solves the problem by applying the concept of mutexes to Javascript.
-A mutex is locked by providing a worker callback that will be called once no other locks
-are held on the mutex. Once the async process is complete (usually taking multiple
-spins of the event loop), a callback supplied to the worker is called in order
+Locking the mutex will return a promise that resolves once the mutex becomes
+available. Once the async process is complete (usually taking multiple
+spins of the event loop), a callback supplied to the caller is called in order
 to release the mutex, allowing the next scheduled worker to execute.
+
+# Semaphore
+
+Imagine a situation where you need to control access to several instances of
+a shared resource. For example, you might want to distribute images between several
+worker processes that perform image transformationss, or you might want to create a web
+crawler that performs a defined number of requests in parallel.
+
+A semaphore is a data structure that is initialized to a positive integer value and that
+can be locked multiple times.
+As long as the semaphore value is positive, locking it will return the current value
+and the locking process will continue execution immediatelly; the semaphore will
+be decremented upon locking. Releasing the lock will increment the semaphore again.
+
+Once the semaphore has reached zero, the next process that attempts to acquire a lock
+will be suspended until another process releases its lock and this increments the semaphore
+again.
+
+This library provides a semaphore implementation for Javascript that is similar to the
+mutex implementation described above. Mutexes are a simple wrapper on top of a semaphore
+of value 1.
 
 # How to use it?
 
@@ -38,35 +61,38 @@ You can install the library into your project via npm
     npm install async-mutex
 
 The library is written in TypeScript and will work in any environment that
-supports ES5 and ES6 promises. If ES6 promises are not supported natively,
-a shim can be used (e.g. [core-js](https://github.com/zloirock/core-js)).
+supports ES5, ES6 promises and `Array.isArray`. On ancient browsers that
+do not support those features natively,a shim can be used (e.g. [core-js](https://github.com/zloirock/core-js)).
 No external typings are required for using this library with
 TypeScript (version >= 2).
 
+Starting with Node 12, native ES6 style imports are supported.
+
 ## Importing
 
-ES5 / CommonJS
+CommonJS
 ```javascript
-var asyncMutex = require('async-mutex').Mutex;
+var Mutex = require('async-mutex').Mutex;
+var Semaphore = require('async-mutex').Semaphore;
+var withTimeout = require('async-mutex').waitFor;
 ```
 
 ES6
 ```javascript
-import {Mutex} from 'async-mutex';
+import {Mutex, Semaphore, waitFor} from 'async-mutex';
 ```
 
-Be aware that `async-mutex` is a commonjs package, though, and that the named exports will not work with the ES module implementation in Node 13 yet.
+Starting with Node 12, native ES6 style imports are supported.
 
 TypeScript
 ```typescript
-import {Mutex, MutexInterface} from 'async-mutex';
+import {Mutex, MutexInterface, Semaphore, SemaphoreInterface, waitFor} from 'async-mutex';
 ```
 
-##  API
+##  Mutex API
 
 ### Creating
 
-ES5/ES6/TypeScript
 ```typescript
 const mutex = new Mutex();
 ```
@@ -75,7 +101,7 @@ Create a new mutex.
 
 ### Locking
 
-ES5/ES6/TypeScript
+Promise style:
 ```typescript
 mutex
     .acquire()
@@ -84,16 +110,7 @@ mutex
     });
 ```
 
-`acquire` returns an (ES6) promise that will resolve as soon as the mutex is
-available and ready to be accessed. The promise resolves with a function `release` that
-must be called once the mutex should be released again.
-
-**IMPORTANT:** Failure to call `release` will hold the mutex locked and will
-lilely deadlock the application. Make sure to call `release` under all circumstances
-and handle exceptions accordingly.
-
-##### Async function example (ESnext/TypeScript)
-
+async/await:
 ```typescript
 const release = await mutex.acquire();
 try {
@@ -104,9 +121,17 @@ try {
 }
 ```
 
+`acquire` returns an (ES6) promise that will resolve as soon as the mutex is
+available and ready to be accessed. The promise resolves with a function `release` that
+must be called once the mutex should be released again.
+
+**IMPORTANT:** Failure to call `release` will hold the mutex locked and will
+lilely deadlock the application. Make sure to call `release` under all circumstances
+and handle exceptions accordingly.
+
 ### Synchronized code execution
 
-ES5/ES6/TypeScript
+Promise style:
 ```typescript
 mutex
     .runExclusive(function() {
@@ -117,15 +142,10 @@ mutex
     });
 ```
 
-##### Async function example (ESnext/TypeScript)
-
-This example is equivalent to the `async`/`await` example that
-locks the mutex directly:
-
+async/await:
 ```typescript
 await mutex.runExclusive(async () => {
-    const i = await store.get();
-    await store.put(i + 1);
+    // ...
 });
 ```
 
@@ -139,10 +159,106 @@ if the callback.
 
 ### Checking whether the mutex is locked
 
-ES5/ES6/TypeScript
 ```typescript
 mutex.isLocked();
 ```
+
+##  Semaphore API
+
+### Creating
+
+```typescript
+const semaphore = new Semaphore(initialValue);
+```
+
+Creates a new semaphore. `initialValue` is a positive integer that defines the
+initial value of the semaphore (aka the maximum number of concurrent consumers)
+
+### Locking
+
+Promise style:
+```typescript
+semaphore
+    .acquire()
+    .then(function([value, release]) {
+        // ...
+    });
+```
+
+async/await:
+```typescript
+const [value, release] = await semaphore.acquire();
+try {
+    // ...
+} finally {
+    release();
+}
+```
+
+`acquire` returns an (ES6) promise that will resolve as soon as the semaphore is
+available and ready to be accessed. The promise resolves to an array with the
+first entry being the current value of the semaphore, and the second value a
+function that must be called to release the semaphore once the critical operation
+has completed.
+
+**IMPORTANT:** Failure to call `release` will hold the semaphore locked and will
+lilely deadlock the application. Make sure to call `release` under all circumstances
+and handle exceptions accordingly.
+
+### Synchronized code execution
+
+Promise style:
+```typescript
+semaphore
+    .runExclusive(function(value) {
+        // ...
+    })
+    .then(function(result) {
+        // ...
+    });
+```
+
+async/await:
+```typescript
+await semaphore.runExclusive(async (value) => {
+    // ...
+});
+```
+
+`runExclusive` schedules the supplied callback to be run once the semaphore is available.
+The callback will receive the current value of the semaphore as its argument.
+The function is expected to return a [Promises/A+](https://promisesaplus.com/)
+compliant promise. Once the promise is resolved (or rejected), the mutex is released.
+`runExclusive` returns a promise that adopts the state of the callback result.
+
+The semaphore is released and the result rejected if an exception occurs during execution
+if the callback.
+
+### Checking whether the semaphore is locked
+
+```typescript
+semaphore.isLocked();
+```
+
+The semaphore is considered to be locked if it has a value of zero.
+
+## Limiting the time waiting for a mutex or semaphore to become available
+
+Sometimes it is desirable to limit the time a program waits for a mutex or
+semaphore to become available. The `withTimeout` decorator can be applied
+to both semaphores and mutexes and changes the behavior of `acquire` and
+`runExclusive` accordingly.
+
+```typescript
+    const mutexWithTimeout = withTimeout(new Mutex(), 100, new Error('timeout'));
+    const semaphoreWithTimeout = withTimeout(new Semaphore(5), 100, new Error('timeout'));
+```
+
+The API of the decorated result is unchanged. The second argument of `withTimeout` is
+the timout in milliseconds. After the timeout is exceeded, the promsie returned by
+`acquire` and `runExclusive` will reject. The latter will not run the provided callback in
+case of an timeout. The third parameter of `withTimeout` is optional and can be used to
+take control over the error with which the promise is rejected.
 
 # License
 
