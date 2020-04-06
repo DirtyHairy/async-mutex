@@ -49,7 +49,9 @@
     "async"
   ],
   "files": [
-    "lib"
+    "lib",
+    "es6",
+    "index.mjs"
   ],
   "devDependencies": {
     "@sinonjs/fake-timers": "^6.0.1",
