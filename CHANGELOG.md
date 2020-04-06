@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+ * Remove sourcemaps
+
 ## 0.2.0
 
  * Add a `Semaphore`, reimplement `Mutex` on top of it
