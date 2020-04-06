@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/DirtyHairy/async-mutex.svg?branch=master)](https://travis-ci.org/DirtyHairy/async-mutex)
 [![npm version](https://badge.fury.io/js/async-mutex.svg)](https://badge.fury.io/js/async-mutex)
+[![Coverage Status](https://coveralls.io/repos/github/DirtyHairy/async-mutex/badge.svg?branch=master)](https://coveralls.io/github/DirtyHairy/async-mutex?branch=master)
 
 # What is it?
 

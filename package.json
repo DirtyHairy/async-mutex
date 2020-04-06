@@ -7,7 +7,7 @@
     "build": "tsc && tsc -p tsconfig.es6.json && tsc -p tsconfig.mjs.json && rollup -o index.mjs mjs/index.js",
     "prepublish": "yarn test && yarn build",
     "test": "yarn lint && nyc --reporter=text --reporter=html --reporter=lcov mocha test/*.ts",
-    "coveralls": "yarn test && cat ./coverage/lcov.info | coveralls"
+    "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
   "author": "Christian Speckner <cnspeckn@googlemail.com> (https://github.com/DirtyHairy/)",
   "license": "MIT",
