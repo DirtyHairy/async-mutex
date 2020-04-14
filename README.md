@@ -69,7 +69,7 @@ TypeScript (version >= 2).
 Starting with Node 12.16 and 13.7, native ES6 style imports are supported.
 
 **WARNING:** Node 13 versions < 13.2.0 fail to import this package correctly.
-Node 12 and earlier are fine, as are newer versions of node 13.
+Node 12 and earlier are fine, as are newer versions of Node 13.
 
 ## Importing
 
@@ -85,7 +85,7 @@ var withTimeout = require('async-mutex').withTimeout;
 import {Mutex, Semaphore, withTimeout} from 'async-mutex';
 ```
 
-With the latest version of node, native ES6 style imports are supported.
+With the latest version of Node, native ES6 style imports are supported.
 
 **TypeScript:**
 ```typescript
