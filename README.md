@@ -66,7 +66,7 @@ a shim can be used (e.g. [core-js](https://github.com/zloirock/core-js)).
 No external typings are required for using this library with
 TypeScript (version >= 2).
 
-Starting with Node 12, native ES6 style imports are supported.
+Starting with Node 12.16 and 13.7, native ES6 style imports are supported.
 
 **WARNING:** Node 13 versions < 13.2.0 fail to import this package correctly.
 Node 12 and earlier are fine, as are newer versions of node 13.
