@@ -85,7 +85,7 @@ var withTimeout = require('async-mutex').withTimeout;
 import {Mutex, Semaphore, withTimeout} from 'async-mutex';
 ```
 
-Starting with Node 12, native ES6 style imports are supported.
+With the latest version of node, native ES6 style imports are supported.
 
 **TypeScript:**
 ```typescript
