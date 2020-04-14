@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+ * Improve compatibility with older versions of node 13, thanks to @josemiguelmelo
+
 ## 0.2.1
 
  * Remove sourcemaps

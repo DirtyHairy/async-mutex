@@ -42,7 +42,7 @@ crawler that performs a defined number of requests in parallel.
 A semaphore is a data structure that is initialized to a positive integer value and that
 can be locked multiple times.
 As long as the semaphore value is positive, locking it will return the current value
-and the locking process will continue execution immediatelly; the semaphore will
+and the locking process will continue execution immediately; the semaphore will
 be decremented upon locking. Releasing the lock will increment the semaphore again.
 
 Once the semaphore has reached zero, the next process that attempts to acquire a lock
@@ -67,6 +67,9 @@ No external typings are required for using this library with
 TypeScript (version >= 2).
 
 Starting with Node 12, native ES6 style imports are supported.
+
+**WARNING:** Node 13 versions < 13.2.0 fail to import this package correctly.
+Node 12 and earlier are fine, as are newer versions of node 13.
 
 ## Importing
 
@@ -149,7 +152,7 @@ await mutex.runExclusive(async () => {
 ```
 
 `runExclusive` schedules the supplied callback to be run once the mutex is unlocked.
-The function may return a promise. Once the promise is resolved or rejected (or immediatelly after
+The function may return a promise. Once the promise is resolved or rejected (or immediately after
 execution if an immediate value was returned),
 the mutex is released. `runExclusive` returns a promise that adopts the state of the function result.
 
@@ -226,7 +229,7 @@ await semaphore.runExclusive(async (value) => {
 
 `runExclusive` schedules the supplied callback to be run once the semaphore is available.
 The callback will receive the current value of the semaphore as its argument.
-The function may return a promise. Once the promise is resolved or rejected (or immediatelly after
+The function may return a promise. Once the promise is resolved or rejected (or immediately after
 execution if an immediate value was returned),
 the semaphore is released. `runExclusive` returns a promise that adopts the state of the function result.
 
