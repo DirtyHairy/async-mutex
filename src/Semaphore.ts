@@ -3,7 +3,7 @@ import SemaphoreInterface from './SemaphoreInterface';
 class Semaphore implements SemaphoreInterface {
     constructor(private _value: number) {
         if (_value <= 0) {
-            throw new Error('semaphore must be intitialized to a positive value');
+            throw new Error('semaphore must be initialized to a positive value');
         }
     }
 
