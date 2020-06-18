@@ -131,6 +131,34 @@ must be called once the mutex should be released again.
 lilely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
+#### Alternate release API
+
+A locked mutex can also be released by calling the `release` method on the mutex:
+
+Promise style:
+```typescript
+mutex
+    .acquire()
+    .then(function() {
+        // ...
+
+        mutex.release();
+    });
+```
+
+async/await:
+```typescript
+await mutex.acquire();
+try {
+    // ...
+} finally {
+    mutex.release();
+}
+```
+
+**WARNING:** Using this API comes with the inherent danger of releasing a mutex locked
+in an entirely unrelated place. Use with care.
+
 ### Synchronized code execution
 
 Promise style:
@@ -184,6 +212,8 @@ semaphore
     .acquire()
     .then(function([value, release]) {
         // ...
+
+        release();
     });
 ```
 
@@ -206,6 +236,34 @@ has completed.
 **IMPORTANT:** Failure to call `release` will hold the semaphore locked and will
 lilely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
+
+#### Alternate release API
+
+A locked semaphore can also be released by calling the `release` method on the semaphore:
+
+Promise style:
+```typescript
+semaphore
+    .acquire()
+    .then(function([value]) {
+        // ...
+
+        semaphore.release();
+    });
+```
+
+async/await:
+```typescript
+const [value] = await semaphore.acquire();
+try {
+    // ...
+} finally {
+    semaphore.release();
+}
+```
+
+**WARNING:** Using this API comes with the inherent danger of releasing a semaphore locked
+in an entirely unrelated place. Use with care.
 
 ### Synchronized code execution
 

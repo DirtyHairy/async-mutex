@@ -30,13 +30,20 @@ class Semaphore implements SemaphoreInterface {
         return this._value <= 0;
     }
 
+    release(): void {
+        if (this._currentReleaser) {
+            this._currentReleaser();
+            this._currentReleaser = undefined;
+        }
+    }
+
     private _dispatch(): void {
         const nextConsumer = this._queue.shift();
 
         if (!nextConsumer) return;
 
         let released = false;
-        const release: SemaphoreInterface.Releaser = () => {
+        this._currentReleaser = () => {
             if (released) return;
 
             released = true;
@@ -45,10 +52,11 @@ class Semaphore implements SemaphoreInterface {
             this._dispatch();
         };
 
-        nextConsumer([this._value--, release]);
+        nextConsumer([this._value--, this._currentReleaser]);
     }
 
     private _queue: Array<(lease: [number, SemaphoreInterface.Releaser]) => void> = [];
+    private _currentReleaser: SemaphoreInterface.Releaser | undefined;
 }
 
 export default Semaphore;

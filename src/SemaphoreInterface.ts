@@ -4,6 +4,8 @@ interface SemaphoreInterface {
     runExclusive<T>(callback: SemaphoreInterface.Worker<T>): Promise<T>;
 
     isLocked(): boolean;
+
+    release(): void;
 }
 
 namespace SemaphoreInterface {

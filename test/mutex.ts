@@ -123,6 +123,20 @@ export const mutexSuite = (factory: () => MutexInterface): void => {
 
         assert(!mutex.isLocked());
     });
+
+    test('the release method releases a locked mutex', async () => {
+        await mutex.acquire();
+
+        assert(mutex.isLocked());
+
+        mutex.release();
+
+        assert(!mutex.isLocked());
+    });
+
+    test('calling release on a unlocked mutex does not throw', () => {
+        mutex.release();
+    });
 };
 
 suite('Mutex', () => mutexSuite(() => new Mutex()));

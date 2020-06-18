@@ -4,6 +4,8 @@ interface MutexInterface {
     runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T>;
 
     isLocked(): boolean;
+
+    release(): void;
 }
 
 namespace MutexInterface {

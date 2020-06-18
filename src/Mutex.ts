@@ -16,6 +16,10 @@ class Mutex implements MutexInterface {
         return this._semaphore.isLocked();
     }
 
+    release(): void {
+        this._semaphore.release();
+    }
+
     private _semaphore = new Semaphore(1);
 }
 
