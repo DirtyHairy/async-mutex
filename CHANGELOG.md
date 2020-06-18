@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+ * Add alternate Semaphore::release and Mutex::release API
+ * Work around build warnings with react native (and probably other bundlers)
+
 ## 0.2.2
 
  * Improve compatibility with older versions of node 13, thanks to @josemiguelmelo
