@@ -75,9 +75,12 @@
   "module": "es6/index.js",
   "types": "lib/index.d.ts",
   "exports": {
-    "import": "./index.mjs",
-    "require": "./lib/index.js",
-    "default": "./lib/index.js"
+    ".": {
+      "import": "./index.mjs",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "dependencies": {
     "tslib": "^1.11.1"
