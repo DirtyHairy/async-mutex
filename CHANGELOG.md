@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+ * Calling Semaphore::release on a semaphore with concurrency > 1 will not work
+   as expected; throw an exception in this case
+ * Make the warning on using Semaphore::release and Mutex::release more prominent
+
 ## 0.2.3
 
  * Add alternate Semaphore::release and Mutex::release API

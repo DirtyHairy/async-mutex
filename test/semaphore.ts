@@ -198,7 +198,8 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     });
 
     test('the release method releases a locked semaphore', async () => {
-        await semaphore.acquire();
+        semaphore = new Semaphore(1);
+
         await semaphore.acquire();
         assert(semaphore.isLocked());
 
@@ -208,7 +209,13 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     });
 
     test('calling release on a unlocked semaphore does not throw', () => {
+        semaphore = new Semaphore(1);
+
         semaphore.release();
+    });
+
+    test('calling release on a semaphore with concurrency > 1 throws', () => {
+        assert.throws(() => semaphore.release());
     });
 };
 

@@ -133,7 +133,11 @@ and handle exceptions accordingly.
 
 #### Alternate release API
 
-A locked mutex can also be released by calling the `release` method on the mutex:
+A locked mutex can also be released by calling the `release` method on the mutex. This will
+release the current lock on the mutex.
+
+**WARNING:** Using this API comes with the inherent danger of releasing a mutex locked
+in an entirely unrelated place. Use with care.
 
 Promise style:
 ```typescript
@@ -142,6 +146,7 @@ mutex
     .then(function() {
         // ...
 
+        // Please read and understand the WARNING above before using this API.
         mutex.release();
     });
 ```
@@ -152,12 +157,10 @@ await mutex.acquire();
 try {
     // ...
 } finally {
+    // Please read and understand the WARNING above before using this API.
     mutex.release();
 }
 ```
-
-**WARNING:** Using this API comes with the inherent danger of releasing a mutex locked
-in an entirely unrelated place. Use with care.
 
 ### Synchronized code execution
 
@@ -239,7 +242,12 @@ and handle exceptions accordingly.
 
 #### Alternate release API
 
-A locked semaphore can also be released by calling the `release` method on the semaphore:
+A locked semaphore can also be released by calling the `release` method on the semaphore.
+This will release the most recent lock on the semaphore. As such, this will only work with
+semaphores with `maxValue == 1`. Calling this on other semaphores will throw an exception.
+
+**WARNING:** Using this API comes with the inherent danger of releasing a semaphore locked
+in an entirely unrelated place. Use with care.
 
 Promise style:
 ```typescript
@@ -248,6 +256,7 @@ semaphore
     .then(function([value]) {
         // ...
 
+        // Please read and understand the WARNING above before using this API.
         semaphore.release();
     });
 ```
@@ -258,12 +267,10 @@ const [value] = await semaphore.acquire();
 try {
     // ...
 } finally {
+    // Please read and understand the WARNING above before using this API.
     semaphore.release();
 }
 ```
-
-**WARNING:** Using this API comes with the inherent danger of releasing a semaphore locked
-in an entirely unrelated place. Use with care.
 
 ### Synchronized code execution
 

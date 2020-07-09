@@ -1,10 +1,12 @@
 import SemaphoreInterface from './SemaphoreInterface';
 
 class Semaphore implements SemaphoreInterface {
-    constructor(private _value: number) {
-        if (_value <= 0) {
+    constructor(private _maxConcurrency: number) {
+        if (_maxConcurrency <= 0) {
             throw new Error('semaphore must be initialized to a positive value');
         }
+
+        this._value = _maxConcurrency;
     }
 
     acquire(): Promise<[number, SemaphoreInterface.Releaser]> {
@@ -31,6 +33,12 @@ class Semaphore implements SemaphoreInterface {
     }
 
     release(): void {
+        if (this._maxConcurrency > 1) {
+            throw new Error(
+                'this method is unavailabel on semaphores with concurrency > 1; use the scoped release returned by acquire instead'
+            );
+        }
+
         if (this._currentReleaser) {
             this._currentReleaser();
             this._currentReleaser = undefined;
@@ -57,6 +65,7 @@ class Semaphore implements SemaphoreInterface {
 
     private _queue: Array<(lease: [number, SemaphoreInterface.Releaser]) => void> = [];
     private _currentReleaser: SemaphoreInterface.Releaser | undefined;
+    private _value: number;
 }
 
 export default Semaphore;
