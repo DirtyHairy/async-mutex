@@ -14,7 +14,7 @@ concurrent processes running on different threads. For example, before accessing
 a non-threadsafe resource, a thread will lock the mutex. This is guaranteed
 to block the thread until no other thread holds a lock on the mutex and thus
 enforces exclusive access to the resource. Once the operation is complete, the
-thread releases the lock, allowing other threads to aquire a lock and access the
+thread releases the lock, allowing other threads to acquire a lock and access the
 resource.
 
 While Javascript is strictly single-threaded, the asynchronous nature of its
@@ -128,7 +128,7 @@ available and ready to be accessed. The promise resolves with a function `releas
 must be called once the mutex should be released again.
 
 **IMPORTANT:** Failure to call `release` will hold the mutex locked and will
-lilely deadlock the application. Make sure to call `release` under all circumstances
+likely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
 #### Alternate release API
@@ -237,7 +237,7 @@ function that must be called to release the semaphore once the critical operatio
 has completed.
 
 **IMPORTANT:** Failure to call `release` will hold the semaphore locked and will
-lilely deadlock the application. Make sure to call `release` under all circumstances
+likely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
 #### Alternate release API
@@ -324,7 +324,7 @@ to both semaphores and mutexes and changes the behavior of `acquire` and
 The API of the decorated mutex or semaphore is unchanged.
 
 The second argument of `withTimeout` is
-the timout in milliseconds. After the timeout is exceeded, the promsie returned by
+the timeout in milliseconds. After the timeout is exceeded, the promise returned by
 `acquire` and `runExclusive` will reject. The latter will not run the provided callback in
 case of an timeout.
 
