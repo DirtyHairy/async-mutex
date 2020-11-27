@@ -137,6 +137,22 @@ export const mutexSuite = (factory: () => MutexInterface): void => {
     test('calling release on a unlocked mutex does not throw', () => {
         mutex.release();
     });
+
+    test('multiple calls to release behave as expected', async () => {
+        let v = 0;
+
+        const run = async () => {
+            await mutex.acquire();
+
+            v++;
+
+            mutex.release();
+        }
+
+        await Promise.all([run(), run(), run()]);
+
+        assert.strictEqual(v, 3);
+    });
 };
 
 suite('Mutex', () => mutexSuite(() => new Mutex()));

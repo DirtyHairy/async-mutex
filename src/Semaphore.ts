@@ -40,8 +40,10 @@ class Semaphore implements SemaphoreInterface {
         }
 
         if (this._currentReleaser) {
-            this._currentReleaser();
+            const releaser = this._currentReleaser;
             this._currentReleaser = undefined;
+
+            releaser();
         }
     }
 
