@@ -1,9 +1,13 @@
 # Changelog
 
-## 0.2.5
+## 0.2.6
 
  * Fix a nasty [bug](https://github.com/DirtyHairy/async-mutex/issues/27) related to
    consecutive calls to `mutex::release`.
+
+## 0.2.5
+
+ * Nothing new thanks to NPM. Go away. Install 0.2.6.
 
 ## 0.2.4
 
