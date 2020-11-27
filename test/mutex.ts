@@ -68,7 +68,7 @@ export const mutexSuite = (factory: () => MutexInterface): void => {
                     new Promise((resolve) =>
                         setTimeout(() => {
                             flag = true;
-                            resolve();
+                            resolve(undefined);
                         }, 50)
                     )
             );

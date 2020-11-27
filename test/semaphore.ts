@@ -137,7 +137,7 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
                     new Promise((resolve) =>
                         setTimeout(() => {
                             flag = true;
-                            resolve();
+                            resolve(undefined);
                         }, 50)
                     )
             );
