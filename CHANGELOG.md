@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.5
+
+ * Fix a nasty [bug](https://github.com/DirtyHairy/async-mutex/issues/27) related to
+   consecutive calls to `mutex::release`.
+
 ## 0.2.4
 
  * Calling Semaphore::release on a semaphore with concurrency > 1 will not work

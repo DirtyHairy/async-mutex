@@ -1,6 +1,6 @@
 {
   "name": "async-mutex",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A mutex for guarding async workflows",
   "scripts": {
     "lint": "eslint src/**/*.ts test/**/*.ts",
