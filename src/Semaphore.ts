@@ -35,7 +35,7 @@ class Semaphore implements SemaphoreInterface {
     release(): void {
         if (this._maxConcurrency > 1) {
             throw new Error(
-                'this method is unavailabel on semaphores with concurrency > 1; use the scoped release returned by acquire instead'
+                'this method is unavailable on semaphores with concurrency > 1; use the scoped release returned by acquire instead'
             );
         }
 
