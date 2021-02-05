@@ -138,6 +138,8 @@ mutex
     .acquire()
     .then(function(release) {
         // ...
+
+        release();
     });
 ```
 
@@ -152,7 +154,7 @@ try {
 ```
 
 `acquire` returns an (ES6) promise that will resolve as soon as the mutex is
-available and ready to be accessed. The promise resolves with a function `release` that
+available. The promise resolves with a function `release` that
 must be called once the mutex should be released again.
 
 **IMPORTANT:** Failure to call `release` will hold the mutex locked and will
@@ -207,8 +209,11 @@ try {
 }
 ```
 
+This works with `aquire`, too:
+if `acquire` is used for locking, the resulting promise will reject with `E_CANCELED`.
+
 The error that is thrown can be customized by passing a different error to the `Mutex`
-constructor.
+constructor:
 
 ```typescript
 const mutex = new Mutex(new Error('fancy custom error'));
@@ -226,7 +231,7 @@ const semaphore = new Semaphore(initialValue);
 ```
 
 Creates a new semaphore. `initialValue` is a positive integer that defines the
-initial value of the semaphore (aka the maximum number of concurrent consumers)
+initial value of the semaphore (aka the maximum number of concurrent consumers).
 
 ### Synchronized code execution
 
@@ -255,7 +260,7 @@ execution if an immediate value was returned),
 the semaphore is released. `runExclusive` returns a promise that adopts the state of the function result.
 
 The semaphore is released and the result rejected if an exception occurs during execution
-if the callback.
+of the callback.
 
 ### Manual locking / releasing
 
@@ -281,7 +286,7 @@ try {
 ```
 
 `acquire` returns an (ES6) promise that will resolve as soon as the semaphore is
-available and ready to be accessed. The promise resolves to an array with the
+available. The promise resolves to an array with the
 first entry being the current value of the semaphore, and the second value a
 function that must be called to release the semaphore once the critical operation
 has completed.
@@ -340,8 +345,11 @@ try {
 }
 ```
 
+This works with `aquire`, too:
+if `acquire` is used for locking, the resulting promise will reject with `E_CANCELED`.
+
 The error that is thrown can be customized by passing a different error to the `Semaphore`
-constructor.
+constructor:
 
 ```typescript
 const semaphore = new Semaphore(2, new Error('fancy custom error'));
