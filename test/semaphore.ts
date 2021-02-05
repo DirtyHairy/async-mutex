@@ -25,7 +25,7 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
 
         await clock.tickAsync(0);
 
-        assert.deepEqual(values.sort(), [1, 2]);
+        assert.deepStrictEqual(values.sort(), [1, 2]);
     });
 
     test('acquire blocks when the semaphore has reached zero', async () => {
@@ -40,11 +40,11 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
 
         await clock.tickAsync(0);
 
-        assert.deepEqual(values.sort(), [1, 2]);
+        assert.deepStrictEqual(values.sort(), [1, 2]);
 
         await clock.runAllAsync();
 
-        assert.deepEqual(values.sort(), [1, 1, 2]);
+        assert.deepStrictEqual(values.sort(), [1, 1, 2]);
     });
 
     test('the semaphore increments again after a release', async () => {
@@ -81,15 +81,15 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
 
         await clock.tickAsync(10);
 
-        assert.deepEqual(values.sort(), [1, 2]);
+        assert.deepStrictEqual(values.sort(), [1, 2]);
 
         await clock.tickAsync(40);
 
-        assert.deepEqual(values.sort(), [1, 1, 2]);
+        assert.deepStrictEqual(values.sort(), [1, 1, 2]);
 
         await clock.tickAsync(50);
 
-        assert.deepEqual(values.sort(), [1, 1, 1, 2]);
+        assert.deepStrictEqual(values.sort(), [1, 1, 1, 2]);
     });
 
     test('runExclusive passes semaphore value', async () => {

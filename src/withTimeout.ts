@@ -1,14 +1,11 @@
+import { E_TIMEOUT } from './errors';
 import MutexInterface from './MutexInterface';
 import SemaphoreInterface from './SemaphoreInterface';
 
 export function withTimeout(mutex: MutexInterface, timeout: number, timeoutError?: Error): MutexInterface;
 export function withTimeout(semaphore: SemaphoreInterface, timeout: number, timeoutError?: Error): SemaphoreInterface;
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function withTimeout(
-    sync: MutexInterface | SemaphoreInterface,
-    timeout: number,
-    timeoutError = new Error('timeout')
-) {
+export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError = E_TIMEOUT) {
     return {
         acquire: (): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> =>
             new Promise(async (resolve, reject) => {
