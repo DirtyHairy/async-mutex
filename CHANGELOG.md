@@ -1,9 +1,27 @@
 # Changelog
 
+## 0.3.0
+
+ * Deprecate `Mutex::release` / `Semaphore::release` and remove them from the
+   documentation. The method is still available in 0.3.x, but will be removed in
+   0.4.0.
+
+   I don't like breaking existing APIs, but using this method is inherently
+   dangerous as it can accidentially release locks acquired in a completely
+   different place. Furthermore, it is mostly useless for semaphores. I consider
+   adding it an unfortunate error on my part.
+
+   A safe alternative is the usage of `runExclusive` which allows to execute
+   blocks exclusively and automatically manages acquiring and releasing the
+   mutex or semaphore.
+ * Add `Mutex::cancel` / `Semaphore::cancel` for rejecting all currently pending
+   locks.
+ * Add `tryAcquire` decorator for lock-or-fail semantics.
+
 ## 0.2.6
 
  * Fix a nasty [bug](https://github.com/DirtyHairy/async-mutex/issues/27) related to
-   consecutive calls to `mutex::release`.
+   consecutive calls to `Mutex::release`.
 
 ## 0.2.5
 
