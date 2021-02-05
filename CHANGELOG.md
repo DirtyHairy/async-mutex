@@ -3,13 +3,13 @@
 ## 0.3.0
 
  * Deprecate `Mutex::release` / `Semaphore::release` and remove them from the
-   documentation. The method is still available in 0.3.x, but will be removed in
+   documentation. The methods are still available in 0.3.x, but will be removed in
    0.4.0.
 
-   I don't like breaking existing APIs, but using this method is inherently
-   dangerous as it can accidentially release locks acquired in a completely
-   different place. Furthermore, it is mostly useless for semaphores. I consider
-   adding it an unfortunate error on my part.
+   I don't like breaking existing APIs, but using those methods is inherently
+   dangerous as they can accidentially release locks acquired in a completely
+   different place. Furthermore, they are mostly useless for semaphores. I consider
+   adding them an unfortunate mistake on my end.
 
    A safe alternative is the usage of `runExclusive` which allows to execute
    blocks exclusively and automatically manages acquiring and releasing the
