@@ -102,66 +102,6 @@ const mutex = new Mutex();
 
 Create a new mutex.
 
-### Locking
-
-Promise style:
-```typescript
-mutex
-    .acquire()
-    .then(function(release) {
-        // ...
-    });
-```
-
-async/await:
-```typescript
-const release = await mutex.acquire();
-try {
-    // ...
-} finally {
-    release();
-}
-```
-
-`acquire` returns an (ES6) promise that will resolve as soon as the mutex is
-available and ready to be accessed. The promise resolves with a function `release` that
-must be called once the mutex should be released again.
-
-**IMPORTANT:** Failure to call `release` will hold the mutex locked and will
-likely deadlock the application. Make sure to call `release` under all circumstances
-and handle exceptions accordingly.
-
-#### Alternate release API
-
-A locked mutex can also be released by calling the `release` method on the mutex. This will
-release the current lock on the mutex.
-
-**WARNING:** Using this API comes with the inherent danger of releasing a mutex locked
-in an entirely unrelated place. Use with care.
-
-Promise style:
-```typescript
-mutex
-    .acquire()
-    .then(function() {
-        // ...
-
-        // Please read and understand the WARNING above before using this API.
-        mutex.release();
-    });
-```
-
-async/await:
-```typescript
-await mutex.acquire();
-try {
-    // ...
-} finally {
-    // Please read and understand the WARNING above before using this API.
-    mutex.release();
-}
-```
-
 ### Synchronized code execution
 
 Promise style:
@@ -190,6 +130,39 @@ the mutex is released. `runExclusive` returns a promise that adopts the state of
 The mutex is released and the result rejected if an exception occurs during execution
 if the callback.
 
+### Manual locking / releasing
+
+Promise style:
+```typescript
+mutex
+    .acquire()
+    .then(function(release) {
+        // ...
+    });
+```
+
+async/await:
+```typescript
+const release = await mutex.acquire();
+try {
+    // ...
+} finally {
+    release();
+}
+```
+
+`acquire` returns an (ES6) promise that will resolve as soon as the mutex is
+available and ready to be accessed. The promise resolves with a function `release` that
+must be called once the mutex should be released again.
+
+**IMPORTANT:** Failure to call `release` will hold the mutex locked and will
+likely deadlock the application. Make sure to call `release` under all circumstances
+and handle exceptions accordingly.
+
+`acquire` / `release` should be considered a low level API. In most situations,
+`runExclusive` will be a better choice that automatically takes care of releasing
+the mutex once a block of code has executed exclusively.
+
 ### Checking whether the mutex is locked
 
 ```typescript
@@ -207,7 +180,36 @@ const semaphore = new Semaphore(initialValue);
 Creates a new semaphore. `initialValue` is a positive integer that defines the
 initial value of the semaphore (aka the maximum number of concurrent consumers)
 
-### Locking
+### Synchronized code execution
+
+Promise style:
+```typescript
+semaphore
+    .runExclusive(function(value) {
+        // ...
+    })
+    .then(function(result) {
+        // ...
+    });
+```
+
+async/await:
+```typescript
+await semaphore.runExclusive(async (value) => {
+    // ...
+});
+```
+
+`runExclusive` schedules the supplied callback to be run once the semaphore is available.
+The callback will receive the current value of the semaphore as its argument.
+The function may return a promise. Once the promise is resolved or rejected (or immediately after
+execution if an immediate value was returned),
+the semaphore is released. `runExclusive` returns a promise that adopts the state of the function result.
+
+The semaphore is released and the result rejected if an exception occurs during execution
+if the callback.
+
+### Manual locking / releasing
 
 Promise style:
 ```typescript
@@ -240,66 +242,9 @@ has completed.
 likely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
-#### Alternate release API
-
-A locked semaphore can also be released by calling the `release` method on the semaphore.
-This will release the most recent lock on the semaphore. As such, this will only work with
-semaphores with `maxValue == 1`. Calling this on other semaphores will throw an exception.
-
-**WARNING:** Using this API comes with the inherent danger of releasing a semaphore locked
-in an entirely unrelated place. Use with care.
-
-Promise style:
-```typescript
-semaphore
-    .acquire()
-    .then(function([value]) {
-        // ...
-
-        // Please read and understand the WARNING above before using this API.
-        semaphore.release();
-    });
-```
-
-async/await:
-```typescript
-const [value] = await semaphore.acquire();
-try {
-    // ...
-} finally {
-    // Please read and understand the WARNING above before using this API.
-    semaphore.release();
-}
-```
-
-### Synchronized code execution
-
-Promise style:
-```typescript
-semaphore
-    .runExclusive(function(value) {
-        // ...
-    })
-    .then(function(result) {
-        // ...
-    });
-```
-
-async/await:
-```typescript
-await semaphore.runExclusive(async (value) => {
-    // ...
-});
-```
-
-`runExclusive` schedules the supplied callback to be run once the semaphore is available.
-The callback will receive the current value of the semaphore as its argument.
-The function may return a promise. Once the promise is resolved or rejected (or immediately after
-execution if an immediate value was returned),
-the semaphore is released. `runExclusive` returns a promise that adopts the state of the function result.
-
-The semaphore is released and the result rejected if an exception occurs during execution
-if the callback.
+`acquire` / `release` should be considered a low level API. In most situations,
+`runExclusive` will be a better choice that automatically takes care of releasing
+the mutex once a block of code has executed exclusively.
 
 ### Checking whether the semaphore is locked
 
