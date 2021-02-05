@@ -32,7 +32,7 @@ suite('waitFor', () => {
                 ticket.then(undefined, () => undefined);
 
                 await clock.tickAsync(110);
-                return assert.rejects(ticket, error);
+                await assert.rejects(ticket, error);
             });
 
             test('after a timeout, acquire does automatically release the mutex once it is acquired', async () => {
@@ -60,7 +60,7 @@ suite('waitFor', () => {
 
                 await clock.tickAsync(110);
 
-                return assert.rejects(result, E_TIMEOUT);
+                await assert.rejects(result, E_TIMEOUT);
             });
 
             test('runExclusive does not run the callback if timeout is exceeded', async () => {
@@ -92,9 +92,25 @@ suite('waitFor', () => {
 
                 assert.strictEqual(flag, true);
             });
+
+            test('a canceled lock with timeout will not lock the mutex again', async () => {
+                mutex.acquire().then((release) => setTimeout(release, 150));
+
+                const ticket = mutex.acquire();
+                ticket.then(undefined, () => undefined);
+
+                await clock.tickAsync(120);
+                mutex.cancel();
+
+                assert(mutex.isLocked());
+
+                await clock.tickAsync(50);
+
+                assert(!mutex.isLocked());
+            });
         });
 
-        suite('Mutex API', () => mutexSuite(() => withTimeout(new Mutex(), 500)));
+        suite('Mutex API', () => mutexSuite((e) => withTimeout(new Mutex(e), 500)));
     });
 
     suite('Semaphore', () => {
@@ -118,7 +134,7 @@ suite('waitFor', () => {
                 ticket.then(undefined, () => undefined);
 
                 await clock.tickAsync(110);
-                return assert.rejects(ticket, error);
+                await assert.rejects(ticket, error);
             });
 
             test('after a timeout, acquire does automatically release the semaphore once it is acquired', async () => {
@@ -147,7 +163,7 @@ suite('waitFor', () => {
 
                 await clock.tickAsync(110);
 
-                return assert.rejects(result, error);
+                await assert.rejects(result, error);
             });
 
             test('runExclusive rejects with E_TIMEOUT if no error is specified', async () => {
@@ -161,7 +177,7 @@ suite('waitFor', () => {
 
                 await clock.tickAsync(110);
 
-                return assert.rejects(result, E_TIMEOUT);
+                await assert.rejects(result, E_TIMEOUT);
             });
 
             test('runExclusive does not run the callback if timeout is exceeded', async () => {
@@ -194,8 +210,29 @@ suite('waitFor', () => {
 
                 assert.strictEqual(flag, true);
             });
+
+            test('a canceled lock with timeout will not lock the semaphore again', async () => {
+                semaphore.acquire().then(([, release]) => setTimeout(release, 150));
+                semaphore.acquire().then(([, release]) => setTimeout(release, 200));
+
+                const ticket = semaphore.acquire();
+                ticket.then(undefined, () => undefined);
+
+                await clock.tickAsync(120);
+                semaphore.cancel();
+
+                assert(semaphore.isLocked());
+
+                await clock.tickAsync(50);
+
+                assert(!semaphore.isLocked());
+            });
         });
 
-        suite('Semaphore API', () => semaphoreSuite(() => withTimeout(new Semaphore(2), 500)));
+        suite('Semaphore API', () =>
+            semaphoreSuite((maxConcurrency: number, err?: Error) =>
+                withTimeout(new Semaphore(maxConcurrency, err), 500)
+            )
+        );
     });
 });

@@ -2,17 +2,18 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
+import { E_CANCELED } from '../src/errors';
 import Semaphore from '../src/Semaphore';
 import SemaphoreInterface from '../src/SemaphoreInterface';
 import { withTimer } from './util';
 
-export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
+export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) => SemaphoreInterface): void => {
     let semaphore: SemaphoreInterface;
     let clock: InstalledClock;
 
     setup(() => {
         clock = install();
-        semaphore = factory();
+        semaphore = factory(2);
     });
 
     teardown(() => clock.uninstall());
@@ -198,7 +199,7 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     });
 
     test('the release method releases a locked semaphore', async () => {
-        semaphore = new Semaphore(1);
+        semaphore = factory(1);
 
         await semaphore.acquire();
         assert(semaphore.isLocked());
@@ -209,7 +210,7 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     });
 
     test('calling release on a unlocked semaphore does not throw', () => {
-        semaphore = new Semaphore(1);
+        semaphore = factory(1);
 
         semaphore.release();
     });
@@ -217,10 +218,51 @@ export const semaphoreSuite = (factory: () => SemaphoreInterface): void => {
     test('calling release on a semaphore with concurrency > 1 throws', () => {
         assert.throws(() => semaphore.release());
     });
+
+    test('cancel rejects all pending locks witth E_CANCELED', async () => {
+        await semaphore.acquire();
+        await semaphore.acquire();
+
+        const ticket = semaphore.acquire();
+        const result = semaphore.runExclusive(() => undefined);
+
+        semaphore.cancel();
+
+        await assert.rejects(ticket, E_CANCELED);
+        await assert.rejects(result, E_CANCELED);
+    });
+
+    test('cancel rejects with a custom error if provided', async () => {
+        const err = new Error();
+        const semaphore = factory(2, err);
+
+        await semaphore.acquire();
+        await semaphore.acquire();
+
+        const ticket = semaphore.acquire();
+
+        semaphore.cancel();
+
+        await assert.rejects(ticket, err);
+    });
+
+    test('a canceled semaphore will not lock the mutex again', async () => {
+        const [, release] = await semaphore.acquire();
+        await semaphore.acquire();
+
+        semaphore.acquire().then(undefined, () => undefined);
+        semaphore.cancel();
+
+        assert(semaphore.isLocked());
+
+        release();
+
+        assert(!semaphore.isLocked());
+    });
 };
 
 suite('Semaphore', () => {
-    semaphoreSuite(() => new Semaphore(2));
+    semaphoreSuite((maxConcurrency: number, err?: Error) => new Semaphore(maxConcurrency, err));
 
     test('Semaphore constructor throws if value <= 0', () => {
         assert.throws(() => new Semaphore(0));

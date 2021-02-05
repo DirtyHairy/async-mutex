@@ -2,11 +2,12 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
+import { E_CANCELED } from '../src/errors';
 import Mutex from '../src/Mutex';
 import MutexInterface from '../src/MutexInterface';
 import { withTimer } from './util';
 
-export const mutexSuite = (factory: () => MutexInterface): void => {
+export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): void => {
     let mutex: MutexInterface;
     let clock: InstalledClock;
 
@@ -147,12 +148,50 @@ export const mutexSuite = (factory: () => MutexInterface): void => {
             v++;
 
             mutex.release();
-        }
+        };
 
         await Promise.all([run(), run(), run()]);
 
         assert.strictEqual(v, 3);
     });
+
+    test('cancel rejects all pending locks witth E_CANCELED', async () => {
+        await mutex.acquire();
+
+        const ticket = mutex.acquire();
+        const result = mutex.runExclusive(() => undefined);
+
+        mutex.cancel();
+
+        await assert.rejects(ticket, E_CANCELED);
+        await assert.rejects(result, E_CANCELED);
+    });
+
+    test('cancel rejects with a custom error if provided', async () => {
+        const err = new Error();
+        const mutex = factory(err);
+
+        await mutex.acquire();
+
+        const ticket = mutex.acquire();
+
+        mutex.cancel();
+
+        await assert.rejects(ticket, err);
+    });
+
+    test('a canceled lock will not lock the mutex again', async () => {
+        const release = await mutex.acquire();
+
+        mutex.acquire().then(undefined, () => undefined);
+        mutex.cancel();
+
+        assert(mutex.isLocked());
+
+        release();
+
+        assert(!mutex.isLocked());
+    });
 };
 
-suite('Mutex', () => mutexSuite(() => new Mutex()));
+suite('Mutex', () => mutexSuite((e) => new Mutex(e)));

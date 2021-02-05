@@ -1,7 +1,13 @@
+import { E_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
+interface QueueEntry {
+    resolve: (ticket: [number, SemaphoreInterface.Releaser]) => void;
+    reject: (err: Error) => void;
+}
+
 class Semaphore implements SemaphoreInterface {
-    constructor(private _maxConcurrency: number) {
+    constructor(private _maxConcurrency: number, private _cancelError: Error = E_CANCELED) {
         if (_maxConcurrency <= 0) {
             throw new Error('semaphore must be initialized to a positive value');
         }
@@ -11,11 +17,13 @@ class Semaphore implements SemaphoreInterface {
 
     acquire(): Promise<[number, SemaphoreInterface.Releaser]> {
         const locked = this.isLocked();
-        const ticket = new Promise<[number, SemaphoreInterface.Releaser]>((r) => this._queue.push(r));
+        const ticketPromise = new Promise<[number, SemaphoreInterface.Releaser]>((resolve, reject) =>
+            this._queue.push({ resolve, reject })
+        );
 
         if (!locked) this._dispatch();
 
-        return ticket;
+        return ticketPromise;
     }
 
     async runExclusive<T>(callback: SemaphoreInterface.Worker<T>): Promise<T> {
@@ -48,10 +56,15 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    private _dispatch(): void {
-        const nextConsumer = this._queue.shift();
+    cancel(): void {
+        this._queue.forEach((ticket) => ticket.reject(this._cancelError));
+        this._queue = [];
+    }
 
-        if (!nextConsumer) return;
+    private _dispatch(): void {
+        const nextTicket = this._queue.shift();
+
+        if (!nextTicket) return;
 
         let released = false;
         this._currentReleaser = () => {
@@ -63,10 +76,10 @@ class Semaphore implements SemaphoreInterface {
             this._dispatch();
         };
 
-        nextConsumer([this._value--, this._currentReleaser]);
+        nextTicket.resolve([this._value--, this._currentReleaser]);
     }
 
-    private _queue: Array<(lease: [number, SemaphoreInterface.Releaser]) => void> = [];
+    private _queue: Array<QueueEntry> = [];
     private _currentReleaser: SemaphoreInterface.Releaser | undefined;
     private _value: number;
 }

@@ -11,19 +11,27 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             new Promise(async (resolve, reject) => {
                 let isTimeout = false;
 
-                setTimeout(() => {
+                const handle = setTimeout(() => {
                     isTimeout = true;
                     reject(timeoutError);
                 }, timeout);
 
-                const ticket = await sync.acquire();
+                try {
+                    const ticket = await sync.acquire();
 
-                if (isTimeout) {
-                    const release = Array.isArray(ticket) ? ticket[1] : ticket;
+                    if (isTimeout) {
+                        const release = Array.isArray(ticket) ? ticket[1] : ticket;
 
-                    release();
-                } else {
-                    resolve(ticket);
+                        release();
+                    } else {
+                        resolve(ticket);
+                    }
+                } catch (e) {
+                    if (!isTimeout) {
+                        clearTimeout(handle);
+
+                        reject(e);
+                    }
                 }
             }),
 
@@ -50,6 +58,10 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
         /** @deprecated Deprecated in 0.3.0, will be removed in 0.4.0. Use runExclusive instead. */
         release(): void {
             sync.release();
+        },
+
+        cancel(): void {
+            return sync.cancel();
         },
 
         isLocked: (): boolean => sync.isLocked(),
