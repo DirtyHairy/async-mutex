@@ -169,6 +169,54 @@ the mutex once a block of code has executed exclusively.
 mutex.isLocked();
 ```
 
+### Cancelling pending locks.
+
+Pending locks can be cancelled by calling `cancel()` on the mutex. This will reject
+all pending locks with `E_CANCELED`:
+
+Promise style:
+```typescript
+import {E_CANCELED} from 'async-mutex';
+
+mutex
+    .runExclusive(() => {
+        // ...
+    })
+    .then(() => {
+        // ...
+    })
+    .catch(e => {
+        if (e === E_CANCELED) {
+            // ...
+        }
+    });
+```
+
+async/await:
+```typescript
+import {E_CANCELED} from 'async-mutex';
+
+try {
+    await mutex.runExclusive(() => {
+        // ...
+    });
+} catch (e) {
+    if (e === E_CANCELED) {
+        // ...
+    }
+}
+```
+
+The error that is thrown can be customized by passing a different error to the `Mutex`
+constructor.
+
+```typescript
+const mutex = new Mutex(new Error('fancy custom error'));
+```
+
+Note that while all pending locks are cancelled, a currently held lock will not be
+revoked. In consequence, the mutex may not be available even after `cancel()` has been called.
+
 ##  Semaphore API
 
 ### Creating
@@ -254,6 +302,54 @@ semaphore.isLocked();
 
 The semaphore is considered to be locked if it has a value of zero.
 
+### Cancelling pending locks.
+
+Pending locks can be cancelled by calling `cancel()` on the sempahore. This will reject
+all pending locks with `E_CANCELED`:
+
+Promise style:
+```typescript
+import {E_CANCELED} from 'async-mutex';
+
+semaphore
+    .runExclusive(() => {
+        // ...
+    })
+    .then(() => {
+        // ...
+    })
+    .catch(e => {
+        if (e === E_CANCELED) {
+            // ...
+        }
+    });
+```
+
+async/await:
+```typescript
+import {E_CANCELED} from 'async-mutex';
+
+try {
+    await semaphore.runExclusive(() => {
+        // ...
+    });
+} catch (e) {
+    if (e === E_CANCELED) {
+        // ...
+    }
+}
+```
+
+The error that is thrown can be customized by passing a different error to the `Semaphore`
+constructor.
+
+```typescript
+const semaphore = new Semaphore(2, new Error('fancy custom error'));
+```
+
+Note that while all pending locks are cancelled, any currently held locks will not be
+revoked. In consequence, the semaphore may not be available even after `cancel()` has been called.
+
 ## Limiting the time waiting for a mutex or semaphore to become available
 
 Sometimes it is desirable to limit the time a program waits for a mutex or
@@ -262,19 +358,71 @@ to both semaphores and mutexes and changes the behavior of `acquire` and
 `runExclusive` accordingly.
 
 ```typescript
-    const mutexWithTimeout = withTimeout(new Mutex(), 100, new Error('timeout'));
-    const semaphoreWithTimeout = withTimeout(new Semaphore(5), 100, new Error('timeout'));
+import {withTimeout, E_TIMEOUT} from 'asymc-mutex`;
+
+const mutexWithTimeout = withTimeout(new Mutex(), 100);
+const semaphoreWithTimeout = withTimeout(new Semaphore(5), 100);
 ```
 
 The API of the decorated mutex or semaphore is unchanged.
 
-The second argument of `withTimeout` is
-the timeout in milliseconds. After the timeout is exceeded, the promise returned by
-`acquire` and `runExclusive` will reject. The latter will not run the provided callback in
-case of an timeout.
+The second argument of `withTimeout` is the timeout in milliseconds. After the
+timeout is exceeded, the promise returned by `acquire` and `runExclusive` will
+reject with `E_TIMEOUT`. The latter will not run the provided callback in case
+of an timeout.
 
 The third argument of `withTimeout` is optional and can be used to
 customize the error with which the promise is rejected.
+
+```typescript
+const mutexWithTimeout = withTimeout(new Mutex(), 100, new Error('new fancy error'));
+const semaphoreWithTimeout = withTimeout(new Semaphore(5), 100, new Error('new fancy error'));
+```
+
+### Failing early if the mutex or semaphore is not available
+
+A shortcut exists for the case where you do not want to wait for a lock to
+be available at all. The `tryAcquire` decorator can be applied to both mutexes
+and semaphores and changes the behavior of `acquire` and `runExclusive` to
+immediately throw `E_ALREADY_LOCKED` if the mutex is not available.
+
+Promise style:
+```typescript
+import {tryAcquire, E_ALREADY_LOCKED} from 'asymc-mutex`;
+
+tryAcquire(semaphoreOrMutex)
+    .runExclusive(() => {
+        // ...
+    })
+    .then(() => {
+        // ...
+    })
+    .catch(e => {
+        if (e === E_ALREADY_LOCKED) {
+            // ...
+        }
+    });
+
+```
+
+async/await:
+```typescript
+import {tryAcquire, E_ALREADY_LOCKED} from 'asymc-mutex`;
+
+try {
+    await tryAcquire(semaphoreOrMutex).runExclusive(() => {
+        // ...
+    });
+} catch (e) {
+    if (e === E_NOT_AVAILABLE {
+        // ...
+    }
+}
+
+```
+
+Again, the error can be customized by providing a custom error as second argument to
+`tryAcquire`.
 
 # License
 
