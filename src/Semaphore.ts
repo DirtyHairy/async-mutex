@@ -32,6 +32,7 @@ class Semaphore implements SemaphoreInterface {
         return this._value <= 0;
     }
 
+    /** @deprecated Deprecated in 0.3.0, will be removed in 0.4.0. Use runExclusive instead. */
     release(): void {
         if (this._maxConcurrency > 1) {
             throw new Error(

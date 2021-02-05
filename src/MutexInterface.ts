@@ -5,6 +5,7 @@ interface MutexInterface {
 
     isLocked(): boolean;
 
+    /** @deprecated Deprecated in 0.3.0, will be removed in 0.4.0. Use runExclusive instead. */
     release(): void;
 }
 
