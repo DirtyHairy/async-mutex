@@ -24,6 +24,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
 
                         release();
                     } else {
+                        clearTimeout(handle);
                         resolve(ticket);
                     }
                 } catch (e) {
