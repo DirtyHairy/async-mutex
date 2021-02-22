@@ -25,6 +25,14 @@ suite('waitFor', () => {
 
             teardown(() => clock.uninstall());
 
+            test('acquire clears timeout if lock is acquired', async () => {
+                await mutex.acquire().then((release) => release());
+                mutex.acquire().then((release) => setTimeout(release, 75));
+
+                await clock.tickAsync(25);
+                assert.strictEqual(clock.countTimers(), 1);
+            });
+
             test('acquire rejects with timeout error if timeout is exceeded', async () => {
                 mutex.acquire().then((release) => setTimeout(release, 150));
 
@@ -125,6 +133,14 @@ suite('waitFor', () => {
             });
 
             teardown(() => clock.uninstall());
+
+            test('acquire clears timeout if lock is acquired', async () => {
+                await semaphore.acquire().then(([, release]) => release());
+                semaphore.acquire().then(([, release]) => setTimeout(release, 75));
+
+                await clock.tickAsync(25);
+                assert.strictEqual(clock.countTimers(), 1);
+            });
 
             test('acquire rejects with timeout error if timeout is exceeded', async () => {
                 semaphore.acquire();
