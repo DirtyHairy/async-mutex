@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+* `withTimeout`: make Jest happy and cancel timer when the mutex is acquired.
+  Thanks to cantoine for the PR.
+
 ## 0.3.0
 
  * Deprecate `Mutex::release` / `Semaphore::release` and remove them from the
