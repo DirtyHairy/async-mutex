@@ -16,6 +16,10 @@ class Mutex implements MutexInterface {
         return this._semaphore.runExclusive(() => callback());
     }
 
+    wrap(func: Function): Function {
+        return this._semaphore.wrap(func);
+    }
+
     isLocked(): boolean {
         return this._semaphore.isLocked();
     }
