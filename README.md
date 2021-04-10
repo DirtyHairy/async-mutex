@@ -366,7 +366,7 @@ to both semaphores and mutexes and changes the behavior of `acquire` and
 `runExclusive` accordingly.
 
 ```typescript
-import {withTimeout, E_TIMEOUT} from 'asymc-mutex`;
+import {withTimeout, E_TIMEOUT} from 'async-mutex';
 
 const mutexWithTimeout = withTimeout(new Mutex(), 100);
 const semaphoreWithTimeout = withTimeout(new Semaphore(5), 100);
@@ -396,7 +396,7 @@ immediately throw `E_ALREADY_LOCKED` if the mutex is not available.
 
 Promise style:
 ```typescript
-import {tryAcquire, E_ALREADY_LOCKED} from 'asymc-mutex`;
+import {tryAcquire, E_ALREADY_LOCKED} from 'async-mutex';
 
 tryAcquire(semaphoreOrMutex)
     .runExclusive(() => {
@@ -415,7 +415,7 @@ tryAcquire(semaphoreOrMutex)
 
 async/await:
 ```typescript
-import {tryAcquire, E_ALREADY_LOCKED} from 'asymc-mutex`;
+import {tryAcquire, E_ALREADY_LOCKED} from 'async-mutex';
 
 try {
     await tryAcquire(semaphoreOrMutex).runExclusive(() => {
