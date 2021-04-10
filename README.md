@@ -209,7 +209,7 @@ try {
 }
 ```
 
-This works with `aquire`, too:
+This works with `acquire`, too:
 if `acquire` is used for locking, the resulting promise will reject with `E_CANCELED`.
 
 The error that is thrown can be customized by passing a different error to the `Mutex`
