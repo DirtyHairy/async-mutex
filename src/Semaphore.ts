@@ -36,6 +36,14 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
+    wrap(func: Function): Function {
+        return new Proxy(func, {
+            apply: (target, that, args) => {
+                return this.runExclusive(() => Promise.resolve(target.apply(that, args)));
+            },
+        });
+    }
+
     isLocked(): boolean {
         return this._value <= 0;
     }
