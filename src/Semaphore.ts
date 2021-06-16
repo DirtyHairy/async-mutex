@@ -27,12 +27,14 @@ class Semaphore implements SemaphoreInterface {
     }
 
     async runExclusive<T>(callback: SemaphoreInterface.Worker<T>): Promise<T> {
-        const [value, release] = await this.acquire();
-
+        const [value, release] = await this.acquire();        
         try {
-            return await callback(value);
-        } finally {
+            const result = await callback(value);
             release();
+            return result;
+        } catch (error) {
+            release();
+            throw error;
         }
     }
 
