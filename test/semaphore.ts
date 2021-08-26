@@ -29,21 +29,6 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values.sort(), [1, 2]);
     });
 
-    test('waitForLock does not block while the semaphore has not reached zero', async () => {
-        let taskCalls = 0;
-
-        const awaitUnlockWrapper = async () => {
-            await semaphore.waitForUnlock();
-            taskCalls++;
-        };
-
-        awaitUnlockWrapper();
-        awaitUnlockWrapper();
-        await clock.tickAsync(1);
-
-        assert.strictEqual(taskCalls, 2);
-    });
-
     test('acquire blocks when the semaphore has reached zero', async () => {
         const values: Array<number> = [];
 
@@ -63,24 +48,6 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values.sort(), [1, 1, 2]);
     });
 
-    test('waitForLock blocks when the semaphore has reached zero', async () => {
-        let taskCalls = 0;
-
-        const awaitUnlockWrapper = async () => {
-            await semaphore.waitForUnlock();
-            taskCalls++;
-        };
-
-        semaphore.acquire();
-        semaphore.acquire();
-
-        awaitUnlockWrapper();
-        awaitUnlockWrapper();
-        await clock.tickAsync(0);
-
-        assert.strictEqual(taskCalls, 0);
-    });
-
     test('the semaphore increments again after a release', async () => {
         semaphore.acquire().then(([, release]) => setTimeout(release, 100));
         semaphore.acquire().then(([, release]) => setTimeout(release, 200));
@@ -90,30 +57,6 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         const [value] = await semaphore.acquire();
 
         assert.strictEqual(value, 2);
-    });
-
-    test('waitForLock unblocks after a release', async () => {
-        let taskCalls = 0;
-
-        const awaitUnlockWrapper = async () => {
-            await semaphore.waitForUnlock();
-            taskCalls++;
-        };
-
-        const lock = semaphore.acquire();
-        semaphore.acquire();
-
-        awaitUnlockWrapper();
-        awaitUnlockWrapper();
-        await clock.tickAsync(0);
-
-        assert.strictEqual(taskCalls, 0);
-
-        const [, releaser] = await lock;
-        releaser();
-        await clock.tickAsync(0);
-
-        assert.strictEqual(taskCalls, 2);
     });
 
     test('release is idempotent', async () => {
@@ -315,6 +258,63 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         release();
 
         assert(!semaphore.isLocked());
+    });
+
+    test('waitForUnlock does not block while the semaphore has not reached zero', async () => {
+        let taskCalls = 0;
+
+        const awaitUnlockWrapper = async () => {
+            await semaphore.waitForUnlock();
+            taskCalls++;
+        };
+
+        awaitUnlockWrapper();
+        awaitUnlockWrapper();
+        await clock.tickAsync(1);
+
+        assert.strictEqual(taskCalls, 2);
+    });
+
+    test('waitForUnlock blocks when the semaphore has reached zero', async () => {
+        let taskCalls = 0;
+
+        const awaitUnlockWrapper = async () => {
+            await semaphore.waitForUnlock();
+            taskCalls++;
+        };
+
+        semaphore.acquire();
+        semaphore.acquire();
+
+        awaitUnlockWrapper();
+        awaitUnlockWrapper();
+        await clock.tickAsync(0);
+
+        assert.strictEqual(taskCalls, 0);
+    });
+
+    test('waitForUnlock unblocks after a release', async () => {
+        let taskCalls = 0;
+
+        const awaitUnlockWrapper = async () => {
+            await semaphore.waitForUnlock();
+            taskCalls++;
+        };
+
+        const lock = semaphore.acquire();
+        semaphore.acquire();
+
+        awaitUnlockWrapper();
+        awaitUnlockWrapper();
+        await clock.tickAsync(0);
+
+        assert.strictEqual(taskCalls, 0);
+
+        const [, releaser] = await lock;
+        releaser();
+        await clock.tickAsync(0);
+
+        assert.strictEqual(taskCalls, 2);
     });
 };
 

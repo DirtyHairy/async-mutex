@@ -8,7 +8,6 @@ interface QueueEntry {
 
 interface WaitEntry {
     resolve: () => void;
-    reject: (err: Error) => void;
 }
 
 class Semaphore implements SemaphoreInterface {
@@ -46,7 +45,7 @@ class Semaphore implements SemaphoreInterface {
             return Promise.resolve();
         }
 
-        const waitPromise = new Promise<void>((resolve, reject) => this._waiters.push({ resolve, reject }));
+        const waitPromise = new Promise<void>((resolve) => this._waiters.push({ resolve }));
 
         return waitPromise;
     }
