@@ -6,6 +6,11 @@ interface QueueEntry {
     reject: (err: Error) => void;
 }
 
+interface WaitEntry {
+    resolve: () => void;
+    reject: (err: Error) => void;
+}
+
 class Semaphore implements SemaphoreInterface {
     constructor(private _maxConcurrency: number, private _cancelError: Error = E_CANCELED) {
         if (_maxConcurrency <= 0) {
@@ -34,6 +39,16 @@ class Semaphore implements SemaphoreInterface {
         } finally {
             release();
         }
+    }
+
+    async waitForUnlock(): Promise<void> {
+        if (!this.isLocked()) {
+            return Promise.resolve();
+        }
+
+        const waitPromise = new Promise<void>((resolve, reject) => this._waiters.push({ resolve, reject }));
+
+        return waitPromise;
     }
 
     isLocked(): boolean {
@@ -72,6 +87,7 @@ class Semaphore implements SemaphoreInterface {
 
             released = true;
             this._value++;
+            this._resolveWaiters();
 
             this._dispatch();
         };
@@ -79,7 +95,13 @@ class Semaphore implements SemaphoreInterface {
         nextTicket.resolve([this._value--, this._currentReleaser]);
     }
 
+    private _resolveWaiters() {
+        this._waiters.forEach((waiter) => waiter.resolve());
+        this._waiters = [];
+    }
+
     private _queue: Array<QueueEntry> = [];
+    private _waiters: Array<WaitEntry> = [];
     private _currentReleaser: SemaphoreInterface.Releaser | undefined;
     private _value: number;
 }
