@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import { InstalledClock, install } from '@sinonjs/fake-timers';
+import { Clock, install } from '@sinonjs/fake-timers';
 
 import { E_TIMEOUT } from './../src/errors';
 import Mutex from '../src/Mutex';
@@ -14,7 +14,7 @@ import { withTimeout } from '../src/withTimeout';
 suite('waitFor', () => {
     suite('Mutex', () => {
         suite('timeout behavior', () => {
-            let clock: InstalledClock;
+            let clock: Clock;
             let mutex: MutexInterface;
             const error = new Error();
 
@@ -123,7 +123,7 @@ suite('waitFor', () => {
 
     suite('Semaphore', () => {
         suite('timeout behavior', () => {
-            let clock: InstalledClock;
+            let clock: Clock;
             let semaphore: SemaphoreInterface;
             const error = new Error();
 

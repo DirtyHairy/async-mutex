@@ -1,6 +1,6 @@
-import { InstalledClock } from '@sinonjs/fake-timers';
+import { Clock } from '@sinonjs/fake-timers';
 
-export const withTimer = async (clock: InstalledClock, test: () => Promise<void>): Promise<void> => {
+export const withTimer = async (clock: Clock, test: () => Promise<void>): Promise<void> => {
     const result = test();
 
     await clock.runAllAsync();

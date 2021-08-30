@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import { InstalledClock, install } from '@sinonjs/fake-timers';
+import { Clock, install } from '@sinonjs/fake-timers';
 
 import { E_CANCELED } from '../src/errors';
 import Semaphore from '../src/Semaphore';
@@ -9,7 +9,7 @@ import { withTimer } from './util';
 
 export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) => SemaphoreInterface): void => {
     let semaphore: SemaphoreInterface;
-    let clock: InstalledClock;
+    let clock: Clock;
 
     setup(() => {
         clock = install();
