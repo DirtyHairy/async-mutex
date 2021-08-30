@@ -422,7 +422,7 @@ try {
         // ...
     });
 } catch (e) {
-    if (e === E_NOT_AVAILABLE {
+    if (e === E_ALREADY_LOCKED) {
         // ...
     }
 }
