@@ -192,6 +192,61 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
 
         assert(!mutex.isLocked());
     });
+
+    test('waitForUnlock does not block while the mutex has not been acquired', async () => {
+        let taskCalls = 0;
+
+        const awaitUnlockWrapper = async () => {
+            await mutex.waitForUnlock();
+            taskCalls++;
+        };
+
+        awaitUnlockWrapper();
+        awaitUnlockWrapper();
+        await clock.tickAsync(1);
+
+        assert.strictEqual(taskCalls, 2);
+    });
+
+    test('waitForUnlock blocks when the mutex has been acquired', async () => {
+        let taskCalls = 0;
+
+        const awaitUnlockWrapper = async () => {
+            await mutex.waitForUnlock();
+            taskCalls++;
+        };
+
+        mutex.acquire();
+
+        awaitUnlockWrapper();
+        awaitUnlockWrapper();
+        await clock.tickAsync(0);
+
+        assert.strictEqual(taskCalls, 0);
+    });
+
+    test('waitForUnlock unblocks after a release', async () => {
+        let taskCalls = 0;
+
+        const awaitUnlockWrapper = async () => {
+            await mutex.waitForUnlock();
+            taskCalls++;
+        };
+
+        const releaser = await mutex.acquire();
+
+        awaitUnlockWrapper();
+        awaitUnlockWrapper();
+        await clock.tickAsync(0);
+
+        assert.strictEqual(taskCalls, 0);
+
+        releaser();
+
+        await clock.tickAsync(0);
+
+        assert.strictEqual(taskCalls, 2);
+    });
 };
 
 suite('Mutex', () => mutexSuite((e) => new Mutex(e)));
