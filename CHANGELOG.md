@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2
+
+* Add `waitForUnlock` for waiting until a mutex/semaphore is free for locking,
+  thanks to Jason Gore.
+
 ## 0.3.1
 
 * `withTimeout`: make Jest happy and cancel timer when the mutex is acquired.
