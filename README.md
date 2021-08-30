@@ -222,6 +222,29 @@ const mutex = new Mutex(new Error('fancy custom error'));
 Note that while all pending locks are cancelled, a currently held lock will not be
 revoked. In consequence, the mutex may not be available even after `cancel()` has been called.
 
+### Waiting until the mutex is available
+
+You can wait until the mutex is available without locking it by calling `waitForUnlock()`.
+This will return a promise that resolve once the mutex can be acquired again. This operation
+will not lock the mutex, and there is no gurantee that the mutex will still be available
+once a async barrier has been encountered.
+
+Promise style:
+```typescript
+mutex
+    .waitForUnlock()
+    .then(() => {
+        // ...
+    });
+```
+
+Async/await:
+```typescript
+await mutex.waitForUnlock();
+// ...
+```
+
+
 ##  Semaphore API
 
 ### Creating
@@ -357,6 +380,28 @@ const semaphore = new Semaphore(2, new Error('fancy custom error'));
 
 Note that while all pending locks are cancelled, any currently held locks will not be
 revoked. In consequence, the semaphore may not be available even after `cancel()` has been called.
+
+### Waiting until the semaphore is available
+
+You can wait until the semaphore is available without locking it by calling `waitForUnlock()`.
+This will return a promise that resolve once the semaphore can be acquired again. This operation
+will not lock the semaphore, and there is no gurantee that the semaphore will still be available
+once a async barrier has been encountered.
+
+Promise style:
+```typescript
+semaphore
+    .waitForUnlock()
+    .then(() => {
+        // ...
+    });
+```
+
+Async/await:
+```typescript
+await semaphore.waitForUnlock();
+// ...
+```
 
 ## Limiting the time waiting for a mutex or semaphore to become available
 
