@@ -1,6 +1,8 @@
 interface MutexInterface {
     acquire(): Promise<MutexInterface.Releaser>;
 
+    weightedAcquire(): Promise<MutexInterface.Releaser>;
+
     runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T>;
 
     waitForUnlock(): Promise<void>;

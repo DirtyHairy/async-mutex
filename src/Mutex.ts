@@ -6,6 +6,10 @@ class Mutex implements MutexInterface {
         this._semaphore = new Semaphore(1, cancelError);
     }
 
+    async weightedAcquire(): Promise<MutexInterface.Releaser> {
+        return this.acquire()
+    }
+
     async acquire(): Promise<MutexInterface.Releaser> {
         const [, releaser] = await this._semaphore.acquire();
 

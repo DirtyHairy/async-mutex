@@ -29,6 +29,28 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values.sort(), [1, 2]);
     });
 
+    test('weightedAcquire does not block while the semaphore has not reached zero', async () => {
+        const values: Array<number> = [];
+
+        semaphore.weightedAcquire(1).then(([value]) => values.push(value));
+        semaphore.weightedAcquire(1).then(([value]) => values.push(value));
+
+        await clock.tickAsync(0);
+
+        assert.deepStrictEqual(values.sort(), [1, 2]);
+    });
+
+    test('weightedAcquire does block while the semaphore has reached zero', async () => {
+        const values: Array<number> = [];
+
+        semaphore.weightedAcquire(2).then(([value]) => values.push(value));
+        semaphore.weightedAcquire(1).then(([value]) => values.push(value));
+
+        await clock.tickAsync(0);
+
+        assert.deepStrictEqual(values.sort(), [2]);
+    });
+
     test('acquire blocks when the semaphore has reached zero', async () => {
         const values: Array<number> = [];
 
@@ -46,6 +68,33 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         await clock.runAllAsync();
 
         assert.deepStrictEqual(values.sort(), [1, 1, 2]);
+    });
+
+    test('weightedAcquire blocks when the semaphore has reached zero and unblocked on release', async () => {
+        const values: Array<number> = [];
+
+        semaphore.weightedAcquire(1).then(([value, release]) => { 
+            values.push(value)
+            release() 
+        });
+        semaphore.weightedAcquire(3).then(([value, release]) => {
+            values.push(value);
+            setTimeout(() => {
+                release();
+            }, 100);
+        });
+        semaphore.weightedAcquire(1).then(([value, release]) => {
+            values.push(value)
+            release();
+        });
+
+        await clock.tickAsync(0);
+
+        assert.deepStrictEqual(values.sort(), [-1, 1, 2]);
+
+        await clock.runAllAsync();
+
+        assert.deepStrictEqual(values.sort(), [-1, 1, 2]);
     });
 
     test('the semaphore increments again after a release', async () => {

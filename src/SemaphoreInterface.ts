@@ -1,7 +1,7 @@
 interface SemaphoreInterface {
-    weightedAcquire(weight: number): Promise<[number, SemaphoreInterface.Releaser]>;
-
     acquire(): Promise<[number, SemaphoreInterface.Releaser]>;
+
+    weightedAcquire(weight: number): Promise<[number, SemaphoreInterface.Releaser]>;  
 
     runExclusive<T>(callback: SemaphoreInterface.Worker<T>): Promise<T>;
 
