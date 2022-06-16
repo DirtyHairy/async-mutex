@@ -7,7 +7,7 @@ export function withTimeout(semaphore: SemaphoreInterface, timeout: number, time
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError = E_TIMEOUT) {
     return {
-        acquire: (): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> =>
+        weightedAcquire: (weight: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> =>
             new Promise(async (resolve, reject) => {
                 let isTimeout = false;
 
@@ -17,7 +17,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
                 }, timeout);
 
                 try {
-                    const ticket = await sync.acquire();
+                    const ticket = await sync.weightedAcquire(weight);
 
                     if (isTimeout) {
                         const release = Array.isArray(ticket) ? ticket[1] : ticket;
@@ -35,6 +35,10 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
                     }
                 }
             }),
+
+        acquire(): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> {
+            return this.weightedAcquire(1)
+        },
 
         async runExclusive<T>(callback: (value?: number) => Promise<T> | T): Promise<T> {
             let release: () => void = () => undefined;

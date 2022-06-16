@@ -20,12 +20,16 @@ class Semaphore implements SemaphoreInterface {
     }
 
     acquire(): Promise<[number, SemaphoreInterface.Releaser]> {
+        return this.weightedAcquire(1)
+    }
+
+    weightedAcquire(weight: number): Promise<[number, SemaphoreInterface.Releaser]> {
         const locked = this.isLocked();
         const ticketPromise = new Promise<[number, SemaphoreInterface.Releaser]>((resolve, reject) =>
             this._queue.push({ resolve, reject })
         );
 
-        if (!locked) this._dispatch();
+        if (!locked) this._dispatch(weight);
 
         return ticketPromise;
     }
@@ -75,7 +79,7 @@ class Semaphore implements SemaphoreInterface {
         this._queue = [];
     }
 
-    private _dispatch(): void {
+    private _dispatch(weight: number): void {
         const nextTicket = this._queue.shift();
 
         if (!nextTicket) return;
@@ -85,13 +89,19 @@ class Semaphore implements SemaphoreInterface {
             if (released) return;
 
             released = true;
-            this._value++;
+            this._value = this._value + weight
             this._resolveWaiters();
 
-            this._dispatch();
+            this._dispatch(weight);
         };
 
-        nextTicket.resolve([this._value--, this._currentReleaser]);
+        nextTicket.resolve([this._valueMinusMinusWeight(weight), this._currentReleaser]);
+    }
+
+    private _valueMinusMinusWeight(weight: number): number {
+        const oldValue = this._value
+        this._value = this._value - weight
+        return oldValue
     }
 
     private _resolveWaiters() {
