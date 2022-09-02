@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import { Clock, install } from '@sinonjs/fake-timers';
+import { InstalledClock, install } from '@sinonjs/fake-timers';
 
 import { E_CANCELED } from '../src/errors';
 import Semaphore from '../src/Semaphore';
@@ -9,7 +9,7 @@ import { withTimer } from './util';
 
 export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) => SemaphoreInterface): void => {
     let semaphore: SemaphoreInterface;
-    let clock: Clock;
+    let clock: InstalledClock;
 
     setup(() => {
         clock = install();
@@ -73,9 +73,9 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     test('weightedAcquire blocks when the semaphore has reached zero and unblocked on release', async () => {
         const values: Array<number> = [];
 
-        semaphore.weightedAcquire(1).then(([value, release]) => { 
-            values.push(value)
-            release() 
+        semaphore.weightedAcquire(1).then(([value, release]) => {
+            values.push(value);
+            release();
         });
         semaphore.weightedAcquire(3).then(([value, release]) => {
             values.push(value);
@@ -84,7 +84,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
             }, 100);
         });
         semaphore.weightedAcquire(1).then(([value, release]) => {
-            values.push(value)
+            values.push(value);
             release();
         });
 

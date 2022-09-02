@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import { Clock, install } from '@sinonjs/fake-timers';
+import { InstalledClock, install } from '@sinonjs/fake-timers';
 
 import { E_ALREADY_LOCKED } from '../src/errors';
 import Mutex from '../src/Mutex';
@@ -9,7 +9,7 @@ import { tryAcquire } from '../src/tryAcquire';
 
 suite('tryAcquire', () => {
     suite('Mutex', () => {
-        let clock: Clock;
+        let clock: InstalledClock;
 
         setup(() => {
             clock = install();
@@ -53,7 +53,7 @@ suite('tryAcquire', () => {
     });
 
     suite('Semaphore', () => {
-        let clock: Clock;
+        let clock: InstalledClock;
 
         setup(() => {
             clock = install();

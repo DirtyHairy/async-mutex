@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import { Clock, install } from '@sinonjs/fake-timers';
+import { InstalledClock, install } from '@sinonjs/fake-timers';
 
 import { E_CANCELED } from '../src/errors';
 import Mutex from '../src/Mutex';
@@ -9,7 +9,7 @@ import { withTimer } from './util';
 
 export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): void => {
     let mutex: MutexInterface;
-    let clock: Clock;
+    let clock: InstalledClock;
 
     setup(() => {
         clock = install();
