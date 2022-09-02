@@ -37,7 +37,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             }),
 
         acquire(): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> {
-            return this.weightedAcquire(1)
+            return this.weightedAcquire(1);
         },
 
         async runExclusive<T>(callback: (value?: number) => Promise<T> | T): Promise<T> {
@@ -60,7 +60,6 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             }
         },
 
-        /** @deprecated Deprecated in 0.3.0, will be removed in 0.4.0. Use runExclusive instead. */
         release(): void {
             sync.release();
         },

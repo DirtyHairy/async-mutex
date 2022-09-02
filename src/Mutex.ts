@@ -7,7 +7,7 @@ class Mutex implements MutexInterface {
     }
 
     async weightedAcquire(): Promise<MutexInterface.Releaser> {
-        return this.acquire()
+        return this.acquire();
     }
 
     async acquire(): Promise<MutexInterface.Releaser> {
@@ -28,7 +28,6 @@ class Mutex implements MutexInterface {
         return this._semaphore.waitForUnlock();
     }
 
-    /** @deprecated Deprecated in 0.3.0, will be removed in 0.4.0. Use runExclusive instead. */
     release(): void {
         this._semaphore.release();
     }

@@ -20,7 +20,7 @@ class Semaphore implements SemaphoreInterface {
     }
 
     acquire(): Promise<[number, SemaphoreInterface.Releaser]> {
-        return this.weightedAcquire(1)
+        return this.weightedAcquire(1);
     }
 
     weightedAcquire(weight: number): Promise<[number, SemaphoreInterface.Releaser]> {
@@ -58,7 +58,6 @@ class Semaphore implements SemaphoreInterface {
         return this._value <= 0;
     }
 
-    /** @deprecated Deprecated in 0.3.0, will be removed in 0.4.0. Use runExclusive instead. */
     release(): void {
         if (this._maxConcurrency > 1) {
             throw new Error(
@@ -89,7 +88,7 @@ class Semaphore implements SemaphoreInterface {
             if (released) return;
 
             released = true;
-            this._value = this._value + weight
+            this._value = this._value + weight;
             this._resolveWaiters();
 
             this._dispatch(weight);
@@ -99,9 +98,9 @@ class Semaphore implements SemaphoreInterface {
     }
 
     private _valueMinusMinusWeight(weight: number): number {
-        const oldValue = this._value
-        this._value = this._value - weight
-        return oldValue
+        const oldValue = this._value;
+        this._value = this._value - weight;
+        return oldValue;
     }
 
     private _resolveWaiters() {
