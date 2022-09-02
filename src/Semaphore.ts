@@ -2,40 +2,26 @@ import { E_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
 interface QueueEntry {
-    resolve: (ticket: [number, SemaphoreInterface.Releaser]) => void;
-    reject: (err: Error) => void;
-}
-
-interface WaitEntry {
-    resolve: () => void;
+    resolve(result: [number, SemaphoreInterface.Releaser]): void;
+    reject(error: unknown): void;
 }
 
 class Semaphore implements SemaphoreInterface {
-    constructor(private _maxConcurrency: number, private _cancelError: Error = E_CANCELED) {
-        if (_maxConcurrency <= 0) {
-            throw new Error('semaphore must be initialized to a positive value');
-        }
+    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
 
-        this._value = _maxConcurrency;
+    acquire(weight = 1): Promise<[number, SemaphoreInterface.Releaser]> {
+        if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
+
+        return new Promise((resolve, reject) => {
+            if (!this._weightedQueues[weight - 1]) this._weightedQueues[weight - 1] = [];
+            this._weightedQueues[weight - 1].push({ resolve, reject });
+
+            this._dispatch();
+        });
     }
 
-    acquire(): Promise<[number, SemaphoreInterface.Releaser]> {
-        return this.weightedAcquire(1);
-    }
-
-    weightedAcquire(weight: number): Promise<[number, SemaphoreInterface.Releaser]> {
-        const locked = this.isLocked();
-        const ticketPromise = new Promise<[number, SemaphoreInterface.Releaser]>((resolve, reject) =>
-            this._queue.push({ resolve, reject })
-        );
-
-        if (!locked) this._dispatch(weight);
-
-        return ticketPromise;
-    }
-
-    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>): Promise<T> {
-        const [value, release] = await this.acquire();
+    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight = 1): Promise<T> {
+        const [value, release] = await this.acquire(weight);
 
         try {
             return await callback(value);
@@ -44,74 +30,73 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    async waitForUnlock(): Promise<void> {
-        if (!this.isLocked()) {
-            return Promise.resolve();
-        }
+    waitForUnlock(): Promise<void> {
+        return new Promise((resolve) => {
+            this._unlockWaiters.push(resolve);
 
-        const waitPromise = new Promise<void>((resolve) => this._waiters.push({ resolve }));
-
-        return waitPromise;
+            this._dispatch();
+        });
     }
 
     isLocked(): boolean {
         return this._value <= 0;
     }
 
-    release(): void {
-        if (this._maxConcurrency > 1) {
-            throw new Error(
-                'this method is unavailable on semaphores with concurrency > 1; use the scoped release returned by acquire instead'
-            );
-        }
+    getValue(): number {
+        return this._value;
+    }
 
-        if (this._currentReleaser) {
-            const releaser = this._currentReleaser;
-            this._currentReleaser = undefined;
+    setValue(value: number): void {
+        this._value = value;
+        this._dispatch();
+    }
 
-            releaser();
-        }
+    release(value = 1): void {
+        this._value += value;
+        this._dispatch();
     }
 
     cancel(): void {
-        this._queue.forEach((ticket) => ticket.reject(this._cancelError));
-        this._queue = [];
+        this._weightedQueues.forEach((queue) => queue?.forEach((entry) => entry.reject(this._cancelError)));
+        this._weightedQueues = [];
     }
 
-    private _dispatch(weight: number): void {
-        const nextTicket = this._queue.shift();
+    private _dispatch(): void {
+        for (let weight = this._value; weight > 0; weight--) {
+            const queueEntry = this._weightedQueues?.[weight - 1]?.shift();
+            if (!queueEntry) continue;
 
-        if (!nextTicket) return;
+            const previosValue = this._value;
+            this._value -= weight;
 
-        let released = false;
-        this._currentReleaser = () => {
-            if (released) return;
+            queueEntry.resolve([previosValue, this._newReleaser(weight)]);
 
-            released = true;
-            this._value = this._value + weight;
-            this._resolveWaiters();
+            return;
+        }
 
-            this._dispatch(weight);
+        this._drainUnlockWaiters();
+    }
+
+    private _newReleaser(weight: number): () => void {
+        let called = false;
+
+        return () => {
+            if (called) return;
+            called = true;
+
+            this.release(weight);
         };
-
-        nextTicket.resolve([this._valueMinusMinusWeight(weight), this._currentReleaser]);
     }
 
-    private _valueMinusMinusWeight(weight: number): number {
-        const oldValue = this._value;
-        this._value = this._value - weight;
-        return oldValue;
+    private _drainUnlockWaiters(): void {
+        if (this._value <= 0) return;
+
+        this._unlockWaiters.forEach((waiter) => waiter());
+        this._unlockWaiters = [];
     }
 
-    private _resolveWaiters() {
-        this._waiters.forEach((waiter) => waiter.resolve());
-        this._waiters = [];
-    }
-
-    private _queue: Array<QueueEntry> = [];
-    private _waiters: Array<WaitEntry> = [];
-    private _currentReleaser: SemaphoreInterface.Releaser | undefined;
-    private _value: number;
+    private _weightedQueues: Array<Array<QueueEntry>> = [[]];
+    private _unlockWaiters: Array<() => void> = [];
 }
 
 export default Semaphore;

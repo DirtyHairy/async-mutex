@@ -21,30 +21,23 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     test('acquire does not block while the semaphore has not reached zero', async () => {
         const values: Array<number> = [];
 
-        semaphore.acquire().then(([value]) => values.push(value));
-        semaphore.acquire().then(([value]) => values.push(value));
+        semaphore.acquire().then(([value]) => {
+            values.push(value);
+        });
+        semaphore.acquire().then(([value]) => {
+            values.push(value);
+        });
 
         await clock.tickAsync(0);
 
         assert.deepStrictEqual(values.sort(), [1, 2]);
     });
 
-    test('weightedAcquire does not block while the semaphore has not reached zero', async () => {
+    test('acquire with weight does block while the semaphore has reached zero', async () => {
         const values: Array<number> = [];
 
-        semaphore.weightedAcquire(1).then(([value]) => values.push(value));
-        semaphore.weightedAcquire(1).then(([value]) => values.push(value));
-
-        await clock.tickAsync(0);
-
-        assert.deepStrictEqual(values.sort(), [1, 2]);
-    });
-
-    test('weightedAcquire does block while the semaphore has reached zero', async () => {
-        const values: Array<number> = [];
-
-        semaphore.weightedAcquire(2).then(([value]) => values.push(value));
-        semaphore.weightedAcquire(1).then(([value]) => values.push(value));
+        semaphore.acquire(2).then(([value]) => values.push(value));
+        semaphore.acquire(1).then(([value]) => values.push(value));
 
         await clock.tickAsync(0);
 
@@ -68,33 +61,6 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         await clock.runAllAsync();
 
         assert.deepStrictEqual(values.sort(), [1, 1, 2]);
-    });
-
-    test('weightedAcquire blocks when the semaphore has reached zero and unblocked on release', async () => {
-        const values: Array<number> = [];
-
-        semaphore.weightedAcquire(1).then(([value, release]) => {
-            values.push(value);
-            release();
-        });
-        semaphore.weightedAcquire(3).then(([value, release]) => {
-            values.push(value);
-            setTimeout(() => {
-                release();
-            }, 100);
-        });
-        semaphore.weightedAcquire(1).then(([value, release]) => {
-            values.push(value);
-            release();
-        });
-
-        await clock.tickAsync(0);
-
-        assert.deepStrictEqual(values.sort(), [-1, 1, 2]);
-
-        await clock.runAllAsync();
-
-        assert.deepStrictEqual(values.sort(), [-1, 1, 2]);
     });
 
     test('the semaphore increments again after a release', async () => {
@@ -264,10 +230,6 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         semaphore.release();
     });
 
-    test('calling release on a semaphore with concurrency > 1 throws', () => {
-        assert.throws(() => semaphore.release());
-    });
-
     test('cancel rejects all pending locks witth E_CANCELED', async () => {
         await semaphore.acquire();
         await semaphore.acquire();
@@ -369,9 +331,4 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
 suite('Semaphore', () => {
     semaphoreSuite((maxConcurrency: number, err?: Error) => new Semaphore(maxConcurrency, err));
-
-    test('Semaphore constructor throws if value <= 0', () => {
-        assert.throws(() => new Semaphore(0));
-        assert.throws(() => new Semaphore(-1));
-    });
 });

@@ -1,15 +1,17 @@
 interface SemaphoreInterface {
-    acquire(): Promise<[number, SemaphoreInterface.Releaser]>;
+    acquire(weight?: number): Promise<[number, SemaphoreInterface.Releaser]>;
 
-    weightedAcquire(weight: number): Promise<[number, SemaphoreInterface.Releaser]>;
-
-    runExclusive<T>(callback: SemaphoreInterface.Worker<T>): Promise<T>;
+    runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight?: number): Promise<T>;
 
     waitForUnlock(): Promise<void>;
 
     isLocked(): boolean;
 
-    release(): void;
+    getValue(): number;
+
+    setValue(value: number): void;
+
+    release(value?: number): void;
 
     cancel(): void;
 }

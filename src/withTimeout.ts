@@ -1,13 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { E_TIMEOUT } from './errors';
 import MutexInterface from './MutexInterface';
 import SemaphoreInterface from './SemaphoreInterface';
 
 export function withTimeout(mutex: MutexInterface, timeout: number, timeoutError?: Error): MutexInterface;
 export function withTimeout(semaphore: SemaphoreInterface, timeout: number, timeoutError?: Error): SemaphoreInterface;
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError = E_TIMEOUT) {
+export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError = E_TIMEOUT): any {
     return {
-        weightedAcquire: (weight: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> =>
+        acquire: (weight?: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> =>
             new Promise(async (resolve, reject) => {
                 let isTimeout = false;
 
@@ -17,7 +17,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
                 }, timeout);
 
                 try {
-                    const ticket = await sync.weightedAcquire(weight);
+                    const ticket = await sync.acquire(weight);
 
                     if (isTimeout) {
                         const release = Array.isArray(ticket) ? ticket[1] : ticket;
@@ -36,15 +36,11 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
                 }
             }),
 
-        acquire(): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> {
-            return this.weightedAcquire(1);
-        },
-
-        async runExclusive<T>(callback: (value?: number) => Promise<T> | T): Promise<T> {
+        async runExclusive<T>(callback: (value?: number) => Promise<T> | T, weight?: number): Promise<T> {
             let release: () => void = () => undefined;
 
             try {
-                const ticket = await this.acquire();
+                const ticket = await this.acquire(weight);
 
                 if (Array.isArray(ticket)) {
                     release = ticket[1];
@@ -71,5 +67,9 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
         waitForUnlock: (): Promise<void> => sync.waitForUnlock(),
 
         isLocked: (): boolean => sync.isLocked(),
+
+        getValue: (): number => (sync as SemaphoreInterface).getValue?.(),
+
+        setValue: (value: number) => (sync as SemaphoreInterface).setValue?.(value),
     };
 }
