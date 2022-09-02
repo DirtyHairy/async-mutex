@@ -11,7 +11,7 @@ interface SemaphoreInterface {
 
     setValue(value: number): void;
 
-    release(value?: number): void;
+    release(weight?: number): void;
 
     cancel(): void;
 }

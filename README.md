@@ -39,7 +39,7 @@ a shared resource. For example, you might want to distribute images between seve
 worker processes that perform transformations, or you might want to create a web
 crawler that performs a defined number of requests in parallel.
 
-A semaphore is a data structure that is initialized to a positive integer value and that
+A semaphore is a data structure that is initialized to an arbitrary integer value and that
 can be locked multiple times.
 As long as the semaphore value is positive, locking it will return the current value
 and the locking process will continue execution immediately; the semaphore will
@@ -161,9 +161,14 @@ must be called once the mutex should be released again.
 likely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
-`acquire` / `release` should be considered a low level API. In most situations,
-`runExclusive` will be a better choice that automatically takes care of releasing
-the mutex once a block of code has executed exclusively.
+### Unscoped release
+
+As an alternative to calling the `release` callback returned by `acquire`, the mutex
+can be released by calling `release` directly on it:
+
+```typescript
+mutex.release();
+```
 
 ### Checking whether the mutex is locked
 
@@ -253,8 +258,8 @@ await mutex.waitForUnlock();
 const semaphore = new Semaphore(initialValue);
 ```
 
-Creates a new semaphore. `initialValue` is a positive integer that defines the
-initial value of the semaphore (aka the maximum number of concurrent consumers).
+Creates a new semaphore. `initialValue` is an arbitrary integer that defines the
+initial value of the semaphore.
 
 ### Synchronized code execution
 
@@ -284,6 +289,10 @@ the semaphore is released. `runExclusive` returns a promise that adopts the stat
 
 The semaphore is released and the result rejected if an exception occurs during execution
 of the callback.
+
+`runExclusive` accepts an optional argument `weight`. Specifying a `weight` will decrement the
+semaphore by the specified value, and the callback will only be invoked once the semaphore's
+value greater or equal to `weight`.
 
 ### Manual locking / releasing
 
@@ -318,9 +327,31 @@ has completed.
 likely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
-`acquire` / `release` should be considered a low level API. In most situations,
-`runExclusive` will be a better choice that automatically takes care of releasing
-the mutex once a block of code has executed exclusively.
+`runExclusive` accepts an optional argument `weight`. Specifying a `weight` will decrement the
+semaphore by the specified value, and the semaphore will only be acquired once the its
+value is greater or equal to.
+
+### Unscoped release
+
+As an alternative to calling the `release` callback return by `acquire`, the mutex
+can be released by calling `release` directly on it:
+
+```typescript
+mutex.release();
+```
+
+`release` accepts an optional argument `weight` and increments the semaphore accordingly.
+
+**IMPORTANT:** Releasing a previously acquired semaphore with the releaser that was
+returned by acquire will automatically increment the semaphore by the correct weight. If
+you release by calling the unscoped `release` you have to supply the correct weight
+yourself!
+
+### Getting the semaphore value
+
+```typescript
+semaphore.getValue()
+```
 
 ### Checking whether the semaphore is locked
 
@@ -328,7 +359,16 @@ the mutex once a block of code has executed exclusively.
 semaphore.isLocked();
 ```
 
-The semaphore is considered to be locked if it has a value of zero.
+The semaphore is considered to be locked if its value is either zero or negative;
+
+### Setting the semaphore value
+
+The value of a semaphore can be set directly to a desired value. A positive value will
+cause the semaphore to schedule any pending waiters accordingly.
+
+```typescript
+semaphore.setValue();
+```
 
 ### Cancelling pending locks.
 
@@ -368,7 +408,7 @@ try {
 }
 ```
 
-This works with `aquire`, too:
+This works with `acquire`, too:
 if `acquire` is used for locking, the resulting promise will reject with `E_CANCELED`.
 
 The error that is thrown can be customized by passing a different error to the `Semaphore`
@@ -402,6 +442,9 @@ Async/await:
 await semaphore.waitForUnlock();
 // ...
 ```
+
+`waitForUnlock` accepts an optional argument `weight`. If `weight` is specified the promise
+will only resolve once the semaphore's value is greater or equal to weight;
 
 ## Limiting the time waiting for a mutex or semaphore to become available
 
