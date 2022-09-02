@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0
+
+This is a full rewrite of the core implementation.
+
+* Allow negative values for semaphores.
+* Allow weights for `semaphore.acquire` and `semaphore.runExclusive`.
+  A waiter will be dispatched once the value of the semaphore is greater or
+  equal to its weight.
+* Add `semaphore.getValue` and `semaphore.setValue`.
+* Allow weights for `semaphore.waitForUnlock`. The promise will only resolve
+  once the value of the semaphore is greater or equal to its weight.
+* Only resolve `waitForUnlock` once no waiters remain (fixes #52).
+* `waitForUnlock` times out if the `withTimeout` decorator is used.
+
 ## 0.3.2
 
 * Add `waitForUnlock` for waiting until a mutex/semaphore is free for locking,

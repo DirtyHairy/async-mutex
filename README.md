@@ -155,7 +155,8 @@ try {
 
 `acquire` returns an (ES6) promise that will resolve as soon as the mutex is
 available. The promise resolves with a function `release` that
-must be called once the mutex should be released again.
+must be called once the mutex should be released again. The `release` callback
+is idempotent.
 
 **IMPORTANT:** Failure to call `release` will hold the mutex locked and will
 likely deadlock the application. Make sure to call `release` under all circumstances
@@ -321,7 +322,7 @@ try {
 available. The promise resolves to an array with the
 first entry being the current value of the semaphore, and the second value a
 function that must be called to release the semaphore once the critical operation
-has completed.
+has completed. The `release` callback is idempotent.
 
 **IMPORTANT:** Failure to call `release` will hold the semaphore locked and will
 likely deadlock the application. Make sure to call `release` under all circumstances
