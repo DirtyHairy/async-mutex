@@ -8,7 +8,7 @@ import MutexInterface from '../src/MutexInterface';
 import Semaphore from '../src/Semaphore';
 import SemaphoreInterface from '../src/SemaphoreInterface';
 import { mutexSuite } from './mutex';
-import { semaphoreSuite } from './semaphore';
+import { semaphoreSuite } from './semaphoreSuite';
 import { withTimeout } from '../src/withTimeout';
 
 suite('withTimeout', () => {
@@ -115,6 +115,15 @@ suite('withTimeout', () => {
                 await clock.tickAsync(50);
 
                 assert(!mutex.isLocked());
+            });
+
+            test('waitForUnlock times out', async () => {
+                mutex.acquire();
+                const unlockPromise = mutex.waitForUnlock();
+
+                await clock.tickAsync(120);
+
+                assert.rejects(unlockPromise, error);
             });
         });
 
@@ -242,6 +251,15 @@ suite('withTimeout', () => {
                 await clock.tickAsync(50);
 
                 assert(!semaphore.isLocked());
+            });
+
+            test('waitForUnlock times out', async () => {
+                semaphore.acquire(2);
+                const unlockPromise = semaphore.waitForUnlock();
+
+                await clock.tickAsync(120);
+
+                assert.rejects(unlockPromise, error);
             });
         });
 
