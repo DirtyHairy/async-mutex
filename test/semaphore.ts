@@ -81,7 +81,27 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.strictEqual(value, 2);
     });
 
-    test('release is idempotent', async () => {
+    test('a semaphore can be initialized to negative values', async () => {
+        semaphore = factory(-2);
+
+        let value: number | undefined = undefined;
+        semaphore.acquire().then(([x]) => {
+            value = x;
+        });
+
+        await clock.tickAsync(0);
+        assert.strictEqual(value, undefined);
+
+        semaphore.release(2);
+        await clock.tickAsync(0);
+        assert.strictEqual(value, undefined);
+
+        semaphore.release(2);
+        await clock.tickAsync(0);
+        assert.strictEqual(value, 2);
+    });
+
+    test('the releaser is idempotent', async () => {
         const values: Array<number> = [];
 
         semaphore.acquire().then(([value, release]) => {
@@ -113,6 +133,20 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         await clock.tickAsync(50);
 
         assert.deepStrictEqual(values.sort(), [1, 1, 1, 2]);
+    });
+
+    test('the releaser increments by the correct weight', async () => {
+        await semaphore.acquire(2);
+        assert.strictEqual(semaphore.getValue(), 0);
+
+        semaphore.release(2);
+        assert.strictEqual(semaphore.getValue(), 2);
+
+        await semaphore.acquire();
+        assert.strictEqual(semaphore.getValue(), 1);
+
+        semaphore.release();
+        assert.strictEqual(semaphore.getValue(), 2);
     });
 
     test('runExclusive passes semaphore value', async () => {
@@ -191,6 +225,14 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert(flag);
     });
 
+    test('runExclusive passes the correct weight', async () => {
+        semaphore.runExclusive(() => undefined, 2);
+        assert.strictEqual(semaphore.getValue(), 0);
+
+        await clock.runAllAsync();
+        assert.strictEqual(semaphore.getValue(), 2);
+    });
+
     test('new semaphore is unlocked', () => {
         assert(!semaphore.isLocked());
     });
@@ -218,6 +260,33 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         releaser2();
 
         assert(!semaphore.isLocked());
+    });
+
+    test("getValue returns the Semaphore's value", () => {
+        assert.strictEqual(semaphore.getValue(), 2);
+        semaphore.acquire();
+
+        assert.strictEqual(semaphore.getValue(), 1);
+    });
+
+    test('setValue sets the semaphore value and runs all applicable waiters', async () => {
+        semaphore = factory(0);
+
+        let flag1 = false;
+        let flag2 = false;
+        let flag3 = false;
+
+        semaphore.acquire(1).then(() => (flag1 = true));
+        semaphore.acquire(2).then(() => (flag2 = true));
+        semaphore.acquire(4).then(() => (flag3 = true));
+
+        semaphore.setValue(3);
+
+        await clock.runAllAsync();
+
+        assert.strictEqual(flag1, true);
+        assert.strictEqual(flag2, true);
+        assert.strictEqual(flag3, false);
     });
 
     test('the release method releases a locked semaphore', async () => {

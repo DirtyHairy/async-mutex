@@ -68,9 +68,12 @@ class Semaphore implements SemaphoreInterface {
             if (!queueEntry) continue;
 
             const previousValue = this._value;
-            this._value -= weight;
+            const previousWeight = weight;
 
-            queueEntry.resolve([previousValue, this._newReleaser(weight)]);
+            this._value -= weight;
+            weight = this._value + 1;
+
+            queueEntry.resolve([previousValue, this._newReleaser(previousWeight)]);
         }
 
         this._drainUnlockWaiters();

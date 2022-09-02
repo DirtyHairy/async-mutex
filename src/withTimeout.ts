@@ -56,8 +56,8 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             }
         },
 
-        release(): void {
-            sync.release();
+        release(weight?: number): void {
+            sync.release(weight);
         },
 
         cancel(): void {

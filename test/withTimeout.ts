@@ -11,7 +11,7 @@ import { mutexSuite } from './mutex';
 import { semaphoreSuite } from './semaphore';
 import { withTimeout } from '../src/withTimeout';
 
-suite('waitFor', () => {
+suite('withTimeout', () => {
     suite('Mutex', () => {
         suite('timeout behavior', () => {
             let clock: InstalledClock;
