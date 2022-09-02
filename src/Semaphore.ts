@@ -30,9 +30,10 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    waitForUnlock(): Promise<void> {
+    waitForUnlock(weight = 1): Promise<void> {
         return new Promise((resolve) => {
-            this._unlockWaiters.push(resolve);
+            if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
+            this._weightedWaiters[weight - 1].push(resolve);
 
             this._dispatch();
         });
@@ -66,12 +67,10 @@ class Semaphore implements SemaphoreInterface {
             const queueEntry = this._weightedQueues?.[weight - 1]?.shift();
             if (!queueEntry) continue;
 
-            const previosValue = this._value;
+            const previousValue = this._value;
             this._value -= weight;
 
-            queueEntry.resolve([previosValue, this._newReleaser(weight)]);
-
-            return;
+            queueEntry.resolve([previousValue, this._newReleaser(weight)]);
         }
 
         this._drainUnlockWaiters();
@@ -89,14 +88,16 @@ class Semaphore implements SemaphoreInterface {
     }
 
     private _drainUnlockWaiters(): void {
-        if (this._value <= 0) return;
+        for (let weight = this._value; weight > 0; weight--) {
+            if (!this._weightedWaiters[weight - 1]) continue;
 
-        this._unlockWaiters.forEach((waiter) => waiter());
-        this._unlockWaiters = [];
+            this._weightedWaiters[weight - 1].forEach((waiter) => waiter());
+            this._weightedWaiters[weight - 1] = [];
+        }
     }
 
-    private _weightedQueues: Array<Array<QueueEntry>> = [[]];
-    private _unlockWaiters: Array<() => void> = [];
+    private _weightedQueues: Array<Array<QueueEntry>> = [];
+    private _weightedWaiters: Array<Array<() => void>> = [];
 }
 
 export default Semaphore;

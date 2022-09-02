@@ -33,18 +33,25 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values.sort(), [1, 2]);
     });
 
-    test('acquire with weight does block while the semaphore has reached zero', async () => {
+    test('acquire with weight does block while the semaphore has reached zero until it is released again', async () => {
         const values: Array<number> = [];
 
-        semaphore.acquire(2).then(([value]) => values.push(value));
+        semaphore.acquire(2).then(([value, release]) => {
+            values.push(value);
+            setTimeout(release, 100);
+        });
         semaphore.acquire(1).then(([value]) => values.push(value));
 
         await clock.tickAsync(0);
 
         assert.deepStrictEqual(values.sort(), [2]);
+
+        await clock.runAllAsync();
+
+        assert.deepStrictEqual(values.sort(), [2, 2]);
     });
 
-    test('acquire blocks when the semaphore has reached zero', async () => {
+    test('acquire blocks when the semaphore has reached zero until it is released again', async () => {
         const values: Array<number> = [];
 
         semaphore.acquire().then(([value]) => values.push(value));
@@ -230,7 +237,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         semaphore.release();
     });
 
-    test('cancel rejects all pending locks witth E_CANCELED', async () => {
+    test('cancel rejects all pending locks with E_CANCELED', async () => {
         await semaphore.acquire();
         await semaphore.acquire();
 
@@ -257,9 +264,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         await assert.rejects(ticket, err);
     });
 
-    test('a canceled semaphore will not lock the mutex again', async () => {
-        const [, release] = await semaphore.acquire();
-        await semaphore.acquire();
+    test('a canceled waiter will not lock the semaphore again', async () => {
+        const [, release] = await semaphore.acquire(2);
 
         semaphore.acquire().then(undefined, () => undefined);
         semaphore.cancel();

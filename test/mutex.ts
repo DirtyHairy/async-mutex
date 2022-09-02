@@ -180,7 +180,7 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         await assert.rejects(ticket, err);
     });
 
-    test('a canceled lock will not lock the mutex again', async () => {
+    test('a canceled waiter will not lock the mutex again', async () => {
         const release = await mutex.acquire();
 
         mutex.acquire().then(undefined, () => undefined);

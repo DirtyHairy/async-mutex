@@ -25,7 +25,7 @@ class Mutex implements MutexInterface {
     }
 
     release(): void {
-        this._semaphore.release();
+        if (this._semaphore.isLocked()) this._semaphore.release();
     }
 
     cancel(): void {

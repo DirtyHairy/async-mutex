@@ -64,7 +64,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             return sync.cancel();
         },
 
-        waitForUnlock: (): Promise<void> => sync.waitForUnlock(),
+        waitForUnlock: (weight?: number): Promise<void> => sync.waitForUnlock(weight),
 
         isLocked: (): boolean => sync.isLocked(),
 

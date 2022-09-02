@@ -6,3 +6,4 @@ index.mjs
 coverage
 .nyc_output
 package.lock
+.vscode/launch.json
