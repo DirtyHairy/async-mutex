@@ -31,6 +31,8 @@ class Semaphore implements SemaphoreInterface {
     }
 
     waitForUnlock(weight = 1): Promise<void> {
+        if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
+
         return new Promise((resolve) => {
             if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
             this._weightedWaiters[weight - 1].push(resolve);
@@ -52,19 +54,21 @@ class Semaphore implements SemaphoreInterface {
         this._dispatch();
     }
 
-    release(value = 1): void {
-        this._value += value;
+    release(weight = 1): void {
+        if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
+
+        this._value += weight;
         this._dispatch();
     }
 
     cancel(): void {
-        this._weightedQueues.forEach((queue) => queue?.forEach((entry) => entry.reject(this._cancelError)));
+        this._weightedQueues.forEach((queue) => queue.forEach((entry) => entry.reject(this._cancelError)));
         this._weightedQueues = [];
     }
 
     private _dispatch(): void {
         for (let weight = this._value; weight > 0; weight--) {
-            const queueEntry = this._weightedQueues?.[weight - 1]?.shift();
+            const queueEntry = this._weightedQueues[weight - 1]?.shift();
             if (!queueEntry) continue;
 
             const previousValue = this._value;

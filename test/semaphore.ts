@@ -289,6 +289,17 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.strictEqual(flag3, false);
     });
 
+    test('setValue works fine with isolated weights', async () => {
+        let flag = false;
+        semaphore.acquire(8);
+        semaphore.acquire(4).then(() => (flag = true));
+
+        semaphore.setValue(4);
+        await clock.tickAsync(1);
+
+        assert.strictEqual(flag, true);
+    });
+
     test('the release method releases a locked semaphore', async () => {
         semaphore = factory(1);
 
@@ -346,6 +357,14 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert(!semaphore.isLocked());
     });
 
+    test('cancel works fine with isolated weights', () => {
+        const ticket = semaphore.acquire(3);
+
+        semaphore.cancel();
+
+        assert.rejects(ticket);
+    });
+
     test('waitForUnlock does not block while the semaphore has not reached zero', async () => {
         let taskCalls = 0;
 
@@ -401,6 +420,38 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         await clock.tickAsync(0);
 
         assert.strictEqual(taskCalls, 2);
+    });
+
+    test('waitForUnlock only unblocks if the configured weight can be acquired', async () => {
+        await semaphore.acquire(2);
+
+        let flag1 = false;
+        let flag2 = false;
+
+        semaphore.waitForUnlock(1).then(() => (flag1 = true));
+        semaphore.waitForUnlock(2).then(() => (flag2 = true));
+
+        semaphore.release(1);
+        await clock.tickAsync(0);
+
+        assert.deepStrictEqual([flag1, flag2], [true, false]);
+
+        semaphore.release(1);
+        await clock.tickAsync(0);
+
+        assert.deepStrictEqual([flag1, flag2], [true, true]);
+    });
+
+    test('trying to acquire with a negative weight throws', () => {
+        assert.throws(() => semaphore.acquire(-1));
+    });
+
+    test('trying to release with a negative weight throws', () => {
+        assert.throws(() => semaphore.release(-1));
+    });
+
+    test('trying to waitForUnlock with a negative weight throws', () => {
+        assert.throws(() => semaphore.waitForUnlock(-1));
     });
 };
 
