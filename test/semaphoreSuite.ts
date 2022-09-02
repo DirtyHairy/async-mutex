@@ -441,6 +441,24 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual([flag1, flag2], [true, true]);
     });
 
+    test('waitForUnlock only unblocks when the semaphore can actually be acquired again', async () => {
+        semaphore.acquire(2);
+        semaphore.acquire(2);
+
+        let flag = false;
+        semaphore.waitForUnlock().then(() => (flag = true));
+
+        semaphore.release(2);
+        await clock.tickAsync(0);
+
+        assert.strictEqual(flag, false);
+
+        semaphore.release(2);
+        await clock.tickAsync(0);
+
+        assert.strictEqual(flag, true);
+    });
+
     test('trying to acquire with a negative weight throws', () => {
         assert.throws(() => semaphore.acquire(-1));
     });

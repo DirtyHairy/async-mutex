@@ -247,6 +247,24 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
 
         assert.strictEqual(taskCalls, 2);
     });
+
+    test('waitForUnlock only unblocks when the mutex can actually be acquired again', async () => {
+        mutex.acquire();
+        mutex.acquire();
+
+        let flag = false;
+        mutex.waitForUnlock().then(() => (flag = true));
+
+        mutex.release();
+        await clock.tickAsync(0);
+
+        assert.strictEqual(flag, false);
+
+        mutex.release();
+        await clock.tickAsync(0);
+
+        assert.strictEqual(flag, true);
+    });
 };
 
 suite('Mutex', () => mutexSuite((e) => new Mutex(e)));

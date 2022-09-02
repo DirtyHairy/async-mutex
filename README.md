@@ -231,7 +231,7 @@ revoked. In consequence, the mutex may not be available even after `cancel()` ha
 
 You can wait until the mutex is available without locking it by calling `waitForUnlock()`.
 This will return a promise that resolve once the mutex can be acquired again. This operation
-will not lock the mutex, and there is no gurantee that the mutex will still be available
+will not lock the mutex, and there is no guarantee that the mutex will still be available
 once a async barrier has been encountered.
 
 Promise style:
@@ -372,7 +372,7 @@ semaphore.setValue();
 
 ### Cancelling pending locks.
 
-Pending locks can be cancelled by calling `cancel()` on the sempahore. This will reject
+Pending locks can be cancelled by calling `cancel()` on the semaphore. This will reject
 all pending locks with `E_CANCELED`:
 
 Promise style:
@@ -425,7 +425,7 @@ revoked. In consequence, the semaphore may not be available even after `cancel()
 
 You can wait until the semaphore is available without locking it by calling `waitForUnlock()`.
 This will return a promise that resolve once the semaphore can be acquired again. This operation
-will not lock the semaphore, and there is no gurantee that the semaphore will still be available
+will not lock the semaphore, and there is no guarantee that the semaphore will still be available
 once a async barrier has been encountered.
 
 Promise style:
