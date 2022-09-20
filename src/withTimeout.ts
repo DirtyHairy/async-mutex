@@ -75,9 +75,11 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             }
 
             return new Promise((resolve, reject) => {
-                sync.waitForUnlock(weight).then(resolve);
-
-                setTimeout(() => reject(timeoutError), timeout);
+                const handle = setTimeout(() => reject(timeoutError), timeout);
+                sync.waitForUnlock(weight).then(() => {
+                  clearTimeout(handle);
+                  resolve();
+                });
             });
         },
 
