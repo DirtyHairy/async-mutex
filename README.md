@@ -29,7 +29,7 @@ that are hard to fix and even harder to track down.
 This library solves the problem by applying the concept of mutexes to Javascript.
 Locking the mutex will return a promise that resolves once the mutex becomes
 available. Once the async process is complete (usually taking multiple
-spins of the event loop), a callback supplied to the caller is called in order
+spins of the event loop), a callback supplied to the caller should be called in order
 to release the mutex, allowing the next scheduled worker to execute.
 
 # Semaphore
@@ -39,7 +39,7 @@ a shared resource. For example, you might want to distribute images between seve
 worker processes that perform transformations, or you might want to create a web
 crawler that performs a defined number of requests in parallel.
 
-A semaphore is a data structure that is initialized to an arbitrary integer value and that
+A semaphore is a data structure that is initialized with an arbitrary integer value and that
 can be locked multiple times.
 As long as the semaphore value is positive, locking it will return the current value
 and the locking process will continue execution immediately; the semaphore will
@@ -107,10 +107,10 @@ Create a new mutex.
 Promise style:
 ```typescript
 mutex
-    .runExclusive(function() {
+    .runExclusive(() => {
         // ...
     })
-    .then(function(result) {
+    .then((result) => {
         // ...
     });
 ```
@@ -177,7 +177,7 @@ mutex.release();
 mutex.isLocked();
 ```
 
-### Cancelling pending locks.
+### Cancelling pending locks
 
 Pending locks can be cancelled by calling `cancel()` on the mutex. This will reject
 all pending locks with `E_CANCELED`:
@@ -233,7 +233,7 @@ revoked. In consequence, the mutex may not be available even after `cancel()` ha
 You can wait until the mutex is available without locking it by calling `waitForUnlock()`.
 This will return a promise that resolve once the mutex can be acquired again. This operation
 will not lock the mutex, and there is no guarantee that the mutex will still be available
-once a async barrier has been encountered.
+once an async barrier has been encountered.
 
 Promise style:
 ```typescript
@@ -330,15 +330,15 @@ and handle exceptions accordingly.
 
 `runExclusive` accepts an optional argument `weight`. Specifying a `weight` will decrement the
 semaphore by the specified value, and the semaphore will only be acquired once the its
-value is greater or equal to.
+value is greater or equal to `weight`.
 
 ### Unscoped release
 
-As an alternative to calling the `release` callback return by `acquire`, the mutex
+As an alternative to calling the `release` callback returned by `acquire`, the semaphore
 can be released by calling `release` directly on it:
 
 ```typescript
-mutex.release();
+semaphore.release();
 ```
 
 `release` accepts an optional argument `weight` and increments the semaphore accordingly.
@@ -360,7 +360,7 @@ semaphore.getValue()
 semaphore.isLocked();
 ```
 
-The semaphore is considered to be locked if its value is either zero or negative;
+The semaphore is considered to be locked if its value is either zero or negative.
 
 ### Setting the semaphore value
 
@@ -371,7 +371,7 @@ cause the semaphore to schedule any pending waiters accordingly.
 semaphore.setValue();
 ```
 
-### Cancelling pending locks.
+### Cancelling pending locks
 
 Pending locks can be cancelled by calling `cancel()` on the semaphore. This will reject
 all pending locks with `E_CANCELED`:
@@ -427,7 +427,7 @@ revoked. In consequence, the semaphore may not be available even after `cancel()
 You can wait until the semaphore is available without locking it by calling `waitForUnlock()`.
 This will return a promise that resolve once the semaphore can be acquired again. This operation
 will not lock the semaphore, and there is no guarantee that the semaphore will still be available
-once a async barrier has been encountered.
+once an async barrier has been encountered.
 
 Promise style:
 ```typescript
@@ -445,7 +445,7 @@ await semaphore.waitForUnlock();
 ```
 
 `waitForUnlock` accepts an optional argument `weight`. If `weight` is specified the promise
-will only resolve once the semaphore's value is greater or equal to weight;
+will only resolve once the semaphore's value is greater or equal to `weight`;
 
 ## Limiting the time waiting for a mutex or semaphore to become available
 
@@ -499,7 +499,6 @@ tryAcquire(semaphoreOrMutex)
             // ...
         }
     });
-
 ```
 
 async/await:
@@ -515,12 +514,17 @@ try {
         // ...
     }
 }
-
 ```
 
 Again, the error can be customized by providing a custom error as second argument to
 `tryAcquire`.
 
+```typescript
+tryAcquire(semaphoreOrMutex, new Error('new fancy error'))
+    .runExclusive(() => {
+        // ...
+    });
+```
 # License
 
 Feel free to use this library under the conditions of the MIT license.
