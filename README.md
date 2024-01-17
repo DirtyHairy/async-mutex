@@ -128,7 +128,7 @@ execution if an immediate value was returned),
 the mutex is released. `runExclusive` returns a promise that adopts the state of the function result.
 
 The mutex is released and the result rejected if an exception occurs during execution
-if the callback.
+of the callback.
 
 ### Manual locking / releasing
 
