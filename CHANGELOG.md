@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+* Expand documentation and fix a few errors.
+* Clear timeout after acquiring a lock in `withTimeout`.
+* Thanks to AkatQuas and aryzing for their contributions.
+* Update dependencies.
+
 ## 0.4.0
 
 This is a full rewrite of the core implementation.
