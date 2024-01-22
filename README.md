@@ -291,9 +291,13 @@ the semaphore is released. `runExclusive` returns a promise that adopts the stat
 The semaphore is released and the result rejected if an exception occurs during execution
 of the callback.
 
-`runExclusive` accepts an optional argument `weight`. Specifying a `weight` will decrement the
+`runExclusive` accepts a first optional argument `weight`. Specifying a `weight` will decrement the
 semaphore by the specified value, and the callback will only be invoked once the semaphore's
 value greater or equal to `weight`.
+
+`runExclusive` accepts a second optional argument `nice`. Specifying a higher `nice` value will
+cause the task to be scheduled after tasks with a lower `nice` value and before tasks with a higher
+`nice` value. `nice` can be negative and the default is zero.
 
 ### Manual locking / releasing
 
@@ -328,9 +332,13 @@ has completed. The `release` callback is idempotent.
 likely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
-`runExclusive` accepts an optional argument `weight`. Specifying a `weight` will decrement the
-semaphore by the specified value, and the semaphore will only be acquired once the its
+`runExclusive` accepts a first optional argument `weight`. Specifying a `weight` will decrement the
+semaphore by the specified value, and the semaphore will only be acquired once its
 value is greater or equal to `weight`.
+
+`runExclusive` accepts a second optional argument `nice`. Specifying a higher `nice` value will
+cause the task to be scheduled after tasks with a lower `nice` value and before tasks with a higher
+`nice` value. `nice` can be negative and the default is zero.
 
 ### Unscoped release
 
@@ -446,6 +454,11 @@ await semaphore.waitForUnlock();
 
 `waitForUnlock` accepts an optional argument `weight`. If `weight` is specified the promise
 will only resolve once the semaphore's value is greater or equal to `weight`;
+
+`waitForUnlock` accepts a second optional argument `nice`. Specifying a higher `nice` value will
+cause the promise to resolve after tasks with a lower `nice` value and before tasks with a higher
+`nice` value. `nice` can be negative and the default is zero.
+
 
 ## Limiting the time waiting for a mutex or semaphore to become available
 

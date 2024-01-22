@@ -1,9 +1,9 @@
 interface MutexInterface {
-    acquire(): Promise<MutexInterface.Releaser>;
+    acquire(nice?: number): Promise<MutexInterface.Releaser>;
 
-    runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T>;
+    runExclusive<T>(callback: MutexInterface.Worker<T>, nice?: number): Promise<T>;
 
-    waitForUnlock(): Promise<void>;
+    waitForUnlock(nice?: number): Promise<void>;
 
     isLocked(): boolean;
 
