@@ -75,7 +75,34 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values, [0, -1, 1]);
     });
 
-    test('acquire de-prioritizes nice waiters even if they are lighter');
+    test('acquire de-prioritizes nice waiters even if they are lighter', async () => {
+        const values: Array<number> = [];
+
+        // two items with weight 1; runs first because nothing else is waiting
+        semaphore.acquire(1, 0).then(([, release]) => {
+            values.push(0);
+            setTimeout(release, 100);
+        });
+        semaphore.acquire(1, 0).then(([, release]) => {
+            values.push(0);
+            setTimeout(release, 100);
+        });
+
+        // nice item with weight 1
+        semaphore.acquire(1, 1).then(([, release]) => {
+            values.push(1);
+            setTimeout(release, 100);
+        });
+
+        // high-priority item with weight 2; should run before the others
+        semaphore.acquire(2, -1).then(([, release]) => {
+            values.push(-1);
+            setTimeout(release, 100);
+        });
+
+        await clock.runAllAsync();
+        assert.deepStrictEqual(values, [0, 0, -1, 1]);
+    });
 
     test('acquire blocks when the semaphore has reached zero until it is released again', async () => {
         const values: Array<number> = [];
@@ -319,8 +346,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('setValue works fine with isolated weights', async () => {
         let flag = false;
-        semaphore.acquire(8);
         semaphore.acquire(4).then(() => (flag = true));
+        semaphore.acquire(8);
 
         semaphore.setValue(4);
         await clock.tickAsync(1);

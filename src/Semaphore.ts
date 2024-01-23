@@ -2,13 +2,10 @@ import { E_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
 
-interface Nice {
-    nice: number;
-}
-
 interface QueueEntry {
     resolve(result: [number, SemaphoreInterface.Releaser]): void;
     reject(error: unknown): void;
+    weight: number;
     nice: number;
 }
 
@@ -19,9 +16,17 @@ class Semaphore implements SemaphoreInterface {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         return new Promise((resolve, reject) => {
-            if (!this._weightedQueues[weight - 1]) this._weightedQueues[weight - 1] = [];
-            insertSorted(this._weightedQueues[weight - 1], { resolve, reject, nice });
-            this._dispatch();
+            const task = { resolve, reject, weight, nice };
+            const i = this._queue.findIndex((other) => nice < other.nice);
+            if (i === 0 && weight <= this._value) {
+                // Needs immediate dispatch, skip the queue
+                this._dispatchItem(task);
+            } else if (i === -1) {
+                this._queue.push(task);
+            } else {
+                this._queue.splice(i, 0, task);
+            }
+            this._dispatchQueue();
         });
     }
 
@@ -42,7 +47,7 @@ class Semaphore implements SemaphoreInterface {
             if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
             this._weightedWaiters[weight - 1].push(resolve);
 
-            this._dispatch();
+            this._dispatchQueue();
         });
     }
 
@@ -56,36 +61,32 @@ class Semaphore implements SemaphoreInterface {
 
     setValue(value: number): void {
         this._value = value;
-        this._dispatch();
+        this._dispatchQueue();
     }
 
     release(weight = 1): void {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         this._value += weight;
-        this._dispatch();
+        this._dispatchQueue();
     }
 
     cancel(): void {
-        this._weightedQueues.forEach((queue) => queue.forEach((entry) => entry.reject(this._cancelError)));
-        this._weightedQueues = [];
+        this._queue.forEach((entry) => entry.reject(this._cancelError));
+        this._queue = [];
     }
 
-    private _dispatch(): void {
-        for (let weight = this._value; weight > 0; weight--) {
-            const queueEntry = this._weightedQueues[weight - 1]?.shift();
-            if (!queueEntry) continue;
-
-            const previousValue = this._value;
-            const previousWeight = weight;
-
-            this._value -= weight;
-            weight = this._value + 1;
-
-            queueEntry.resolve([previousValue, this._newReleaser(previousWeight)]);
+    private _dispatchQueue(): void {
+        while (this._queue.length > 0 && this._queue[0].weight <= this._value) {
+            this._dispatchItem(this._queue.shift()!);
         }
-
         this._drainUnlockWaiters();
+    }
+
+    private _dispatchItem(item: QueueEntry): void {
+        const previousValue = this._value;
+        this._value -= item.weight;
+        item.resolve([previousValue, this._newReleaser(item.weight)]);
     }
 
     private _newReleaser(weight: number): () => void {
@@ -108,19 +109,8 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    private _weightedQueues: Array<Array<QueueEntry>> = [];
+    private _queue: Array<QueueEntry> = [];
     private _weightedWaiters: Array<Array<() => void>> = [];
-}
-
-function insertSorted<T extends Nice>(a: T[], v: T): void {
-    console.log(`insertSorted; a = ${JSON.stringify(a.map(o => o.nice))}; nice = ${v.nice}`);
-    const i = a.findIndex((other) => v.nice < other.nice);
-    console.log(`i = ${i}`);
-    if (i === -1) {
-        a.push(v);
-    } else {
-        a.splice(i, 0, v);
-    }
 }
 
 export default Semaphore;
