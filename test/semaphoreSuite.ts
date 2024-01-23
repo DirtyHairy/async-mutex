@@ -286,7 +286,14 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.strictEqual(semaphore.getValue(), 2);
     });
 
-    test('runExclusive executes the nicest waiters last');
+    test('runExclusive executes the nicest waiters last', async () => {
+        const values: number[] = [];
+        semaphore.runExclusive(() => { values.push(0) }, 2);
+        semaphore.runExclusive(() => { values.push(1) }, 2, 1);
+        semaphore.runExclusive(() => { values.push(-1) }, 2, -1);
+        await clock.runAllAsync();
+        assert.deepStrictEqual(values, [0, -1, 1]);
+    });
 
     test('new semaphore is unlocked', () => {
         assert(!semaphore.isLocked());

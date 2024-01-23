@@ -41,11 +41,11 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             });
         },
 
-        async runExclusive<T>(callback: (value?: number) => Promise<T> | T, weight?: number): Promise<T> {
+        async runExclusive<T>(callback: (value?: number) => Promise<T> | T, weight?: number, nice?: number): Promise<T> {
             let release: () => void = () => undefined;
 
             try {
-                const ticket = await this.acquire(weight);
+                const ticket = await this.acquire(weight, nice);
 
                 if (Array.isArray(ticket)) {
                     release = ticket[1];
