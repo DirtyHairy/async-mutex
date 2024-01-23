@@ -50,7 +50,32 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values.sort(), [2, 2]);
     });
 
-    test('acquire unblocks the nicest waiters last');
+    test('acquire unblocks the nicest waiters last', async () => {
+        const values: Array<number> = [];
+
+        // nice=0; runs first because nothing else is waiting
+        semaphore.acquire(2, 0).then(([, release]) => {
+            values.push(0);
+            setTimeout(release, 100);
+        });
+
+        // nice=1; queues first
+        semaphore.acquire(2, 1).then(([, release]) => {
+            values.push(1);
+            setTimeout(release, 100);
+        });
+
+        // nice=-1; jumps ahead of nice=+1
+        semaphore.acquire(2, -1).then(([, release]) => {
+            values.push(-1);
+            setTimeout(release, 100);
+        });
+
+        await clock.runAllAsync();
+        assert.deepStrictEqual(values, [0, -1, 1]);
+    });
+
+    test('acquire de-prioritizes nice waiters even if they are lighter');
 
     test('acquire blocks when the semaphore has reached zero until it is released again', async () => {
         const values: Array<number> = [];

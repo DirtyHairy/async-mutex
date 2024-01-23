@@ -1,9 +1,15 @@
 import { E_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
+
+interface Nice {
+    nice: number;
+}
+
 interface QueueEntry {
     resolve(result: [number, SemaphoreInterface.Releaser]): void;
     reject(error: unknown): void;
+    nice: number;
 }
 
 class Semaphore implements SemaphoreInterface {
@@ -14,13 +20,12 @@ class Semaphore implements SemaphoreInterface {
 
         return new Promise((resolve, reject) => {
             if (!this._weightedQueues[weight - 1]) this._weightedQueues[weight - 1] = [];
-            this._weightedQueues[weight - 1].push({ resolve, reject });
-
+            insertSorted(this._weightedQueues[weight - 1], { resolve, reject, nice });
             this._dispatch();
         });
     }
 
-    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight = 1): Promise<T> {
+    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight = 1, nice = 0): Promise<T> {
         const [value, release] = await this.acquire(weight);
 
         try {
