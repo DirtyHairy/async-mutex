@@ -9,7 +9,7 @@ interface QueueEntry {
 class Semaphore implements SemaphoreInterface {
     constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
 
-    acquire(weight = 1): Promise<[number, SemaphoreInterface.Releaser]> {
+    acquire(weight = 1, nice = 0): Promise<[number, SemaphoreInterface.Releaser]> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         return new Promise((resolve, reject) => {
@@ -30,7 +30,7 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    waitForUnlock(weight = 1): Promise<void> {
+    waitForUnlock(weight = 1, nice = 0): Promise<void> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         return new Promise((resolve) => {
@@ -105,6 +105,17 @@ class Semaphore implements SemaphoreInterface {
 
     private _weightedQueues: Array<Array<QueueEntry>> = [];
     private _weightedWaiters: Array<Array<() => void>> = [];
+}
+
+function insertSorted<T extends Nice>(a: T[], v: T): void {
+    console.log(`insertSorted; a = ${JSON.stringify(a.map(o => o.nice))}; nice = ${v.nice}`);
+    const i = a.findIndex((other) => v.nice < other.nice);
+    console.log(`i = ${i}`);
+    if (i === -1) {
+        a.push(v);
+    } else {
+        a.splice(i, 0, v);
+    }
 }
 
 export default Semaphore;
