@@ -2,15 +2,28 @@ import { E_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
 
+interface Nice {
+    nice: number;
+}
+
 interface QueueEntry {
     resolve(result: [number, SemaphoreInterface.Releaser]): void;
+
     reject(error: unknown): void;
+
     weight: number;
     nice: number;
 }
 
+interface Waiter {
+    resolve(): void;
+
+    nice: number;
+}
+
 class Semaphore implements SemaphoreInterface {
-    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
+    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {
+    }
 
     acquire(weight = 1, nice = 0): Promise<[number, SemaphoreInterface.Releaser]> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
@@ -43,12 +56,15 @@ class Semaphore implements SemaphoreInterface {
     waitForUnlock(weight = 1, nice = 0): Promise<void> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
-        return new Promise((resolve) => {
-            if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
-            this._weightedWaiters[weight - 1].push(resolve);
-
-            this._dispatchQueue();
-        });
+        if (this._couldLockImmediately(weight, nice)) {
+            return Promise.resolve();
+        } else {
+            return new Promise((resolve) => {
+                if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
+                insertSorted(this._weightedWaiters[weight - 1], { resolve, nice });
+                this._dispatchQueue();
+            });
+        }
     }
 
     isLocked(): boolean {
@@ -101,16 +117,41 @@ class Semaphore implements SemaphoreInterface {
     }
 
     private _drainUnlockWaiters(): void {
-        for (let weight = this._value; weight > 0; weight--) {
-            if (!this._weightedWaiters[weight - 1]) continue;
-
-            this._weightedWaiters[weight - 1].forEach((waiter) => waiter());
-            this._weightedWaiters[weight - 1] = [];
+        if (this._queue.length === 0) {
+            for (let weight = this._value; weight > 0; weight--) {
+                const waiters = this._weightedWaiters[weight - 1];
+                if (!waiters) continue;
+                waiters.forEach((waiter) => waiter.resolve());
+                this._weightedWaiters[weight - 1] = [];
+            }
+        } else {
+            const queuedNice = this._queue[0].nice;
+            for (let weight = this._value; weight > 0; weight--) {
+                const waiters = this._weightedWaiters[weight - 1];
+                if (!waiters) continue;
+                const i = waiters.findIndex((waiter) => waiter.nice >= queuedNice);
+                (i === -1 ? waiters : waiters.splice(0, i))
+                    .forEach((waiter => { waiter.resolve(); }));
+            }
         }
     }
 
+    private _couldLockImmediately(weight: number, nice: number) {
+        return (this._queue.length === 0 || this._queue[0].nice > nice) &&
+            weight <= this._value;
+    }
+
     private _queue: Array<QueueEntry> = [];
-    private _weightedWaiters: Array<Array<() => void>> = [];
+    private _weightedWaiters: Array<Array<Waiter>> = [];
+}
+
+function insertSorted<T extends Nice>(a: T[], v: T) {
+    const i = a.findIndex((other) => v.nice < other.nice);
+    if (i === -1) {
+        a.push(v);
+    } else {
+        a.splice(i, 0, v);
+    }
 }
 
 export default Semaphore;

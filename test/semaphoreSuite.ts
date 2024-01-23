@@ -515,7 +515,15 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual([flag1, flag2], [true, true]);
     });
 
-    test('waitForUnlock unblocks the nicest waiters last');
+    test('waitForUnlock unblocks the nicest waiters last', async () => {
+        const calledBack: number[] = [];
+        semaphore.acquire(3, 1);  // A big heavy waiting task
+        semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // High priority
+        semaphore.waitForUnlock(1, 1).then(() => { calledBack.push(1); });  // Queued behind the heavy task
+        semaphore.waitForUnlock(1, 2).then(() => { calledBack.push(2); });  // Low priority
+        await clock.runAllAsync();
+        assert.deepStrictEqual(calledBack, [0]);
+    });
 
     test('waitForUnlock only unblocks when the semaphore can actually be acquired again', async () => {
         semaphore.acquire(2);
