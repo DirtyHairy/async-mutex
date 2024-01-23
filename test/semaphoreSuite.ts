@@ -515,7 +515,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual([flag1, flag2], [true, true]);
     });
 
-    test('waitForUnlock unblocks the nicest waiters last', async () => {
+    test('waitForUnlock unblocks only high-priority waiters immediately', async () => {
         const calledBack: number[] = [];
         semaphore.acquire(3, 1);  // A big heavy waiting task
         semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // High priority
@@ -523,6 +523,30 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         semaphore.waitForUnlock(1, 2).then(() => { calledBack.push(2); });  // Low priority
         await clock.runAllAsync();
         assert.deepStrictEqual(calledBack, [0]);
+    });
+
+    test('waitForUnlock unblocks nice waiters as the queue drains', async () => {
+        let calledBack = false;
+        let release: SemaphoreInterface.Releaser;
+
+        semaphore.acquire(2, 0).then(([, r]) => { release = r; });
+        semaphore.acquire(2, 2).then(([, r]) => { setTimeout(r, 100); });
+
+        semaphore.waitForUnlock(2, 1).then(() => { calledBack = true; });
+
+        await clock.tickAsync(0);
+        assert.strictEqual(calledBack, false);
+        release!();
+        await clock.tickAsync(0);
+        assert.strictEqual(calledBack, true);
+        await clock.runAllAsync();
+    });
+
+    test('waitForUnlock resolves immediately when the queue is empty', async () => {
+        let calledBack = false;
+        semaphore.waitForUnlock(1).then(() => { calledBack = true; });
+        await clock.tickAsync(0);
+        assert.strictEqual(calledBack, true);
     });
 
     test('waitForUnlock only unblocks when the semaphore can actually be acquired again', async () => {
