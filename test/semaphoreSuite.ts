@@ -50,6 +50,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values.sort(), [2, 2]);
     });
 
+    test('acquire unblocks the nicest waiters last');
+
     test('acquire blocks when the semaphore has reached zero until it is released again', async () => {
         const values: Array<number> = [];
 
@@ -231,6 +233,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         await clock.runAllAsync();
         assert.strictEqual(semaphore.getValue(), 2);
     });
+
+    test('runExclusive executes the nicest waiters last');
 
     test('new semaphore is unlocked', () => {
         assert(!semaphore.isLocked());
@@ -440,6 +444,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
         assert.deepStrictEqual([flag1, flag2], [true, true]);
     });
+
+    test('waitForUnlock unblocks the nicest waiters last');
 
     test('waitForUnlock only unblocks when the semaphore can actually be acquired again', async () => {
         semaphore.acquire(2);

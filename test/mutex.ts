@@ -36,6 +36,8 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
             assert(flag);
         }));
 
+    test('acquire unblocks the nicest waiter last');
+
     test('runExclusive passes result (immediate)', async () => {
         assert.strictEqual(await mutex.runExclusive(() => 10), 10);
     });
@@ -80,6 +82,8 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
 
             assert(flag);
         }));
+
+    test('runExclusive unblocks the nicest waiters last');
 
     test('exceptions during runExclusive do not leave mutex locked', async () => {
         let flag = false;
@@ -265,6 +269,8 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
 
         assert.strictEqual(flag, true);
     });
+
+    test('waitForUnlock unblocks the nicest waiters last');
 };
 
 suite('Mutex', () => mutexSuite((e) => new Mutex(e)));
