@@ -75,6 +75,17 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values, [0, -1, 1]);
     });
 
+    test('acquire allows high-priority and light tasks to skip the line', async () => {
+        let executed = false;
+        semaphore.acquire(3, 1);
+        semaphore.acquire(1, 0).then(([, release]) => {
+            executed = true;
+            setTimeout(release, 100);
+        });
+        await clock.runAllAsync();
+        assert.strictEqual(executed, true);
+    });
+
     test('acquire de-prioritizes nice waiters even if they are lighter', async () => {
         const values: Array<number> = [];
 
