@@ -2,8 +2,8 @@ import { E_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
 
-interface Nice {
-    nice: number;
+interface Priority {
+    priority: number;
 }
 
 interface QueueEntry {
@@ -12,25 +12,25 @@ interface QueueEntry {
     reject(error: unknown): void;
 
     weight: number;
-    nice: number;
+    priority: number;
 }
 
 interface Waiter {
     resolve(): void;
 
-    nice: number;
+    priority: number;
 }
 
 class Semaphore implements SemaphoreInterface {
     constructor(private _value: number, private _cancelError: Error = E_CANCELED) {
     }
 
-    acquire(weight = 1, nice = 0): Promise<[number, SemaphoreInterface.Releaser]> {
+    acquire(weight = 1, priority = 0): Promise<[number, SemaphoreInterface.Releaser]> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         return new Promise((resolve, reject) => {
-            const task = { resolve, reject, weight, nice };
-            const i = this._queue.findIndex((other) => nice < other.nice);
+            const task = { resolve, reject, weight, priority };
+            const i = this._queue.findIndex((other) => priority > other.priority);
             if (i === 0 && weight <= this._value) {
                 // Needs immediate dispatch, skip the queue
                 this._dispatchItem(task);
@@ -43,8 +43,8 @@ class Semaphore implements SemaphoreInterface {
         });
     }
 
-    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight = 1, nice = 0): Promise<T> {
-        const [value, release] = await this.acquire(weight, nice);
+    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight = 1, priority = 0): Promise<T> {
+        const [value, release] = await this.acquire(weight, priority);
 
         try {
             return await callback(value);
@@ -53,15 +53,15 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    waitForUnlock(weight = 1, nice = 0): Promise<void> {
+    waitForUnlock(weight = 1, priority = 0): Promise<void> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
-        if (this._couldLockImmediately(weight, nice)) {
+        if (this._couldLockImmediately(weight, priority)) {
             return Promise.resolve();
         } else {
             return new Promise((resolve) => {
                 if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
-                insertSorted(this._weightedWaiters[weight - 1], { resolve, nice });
+                insertSorted(this._weightedWaiters[weight - 1], { resolve, priority });
                 this._dispatchQueue();
             });
         }
@@ -126,19 +126,19 @@ class Semaphore implements SemaphoreInterface {
                 this._weightedWaiters[weight - 1] = [];
             }
         } else {
-            const queuedNice = this._queue[0].nice;
+            const queuedPriority = this._queue[0].priority;
             for (let weight = this._value; weight > 0; weight--) {
                 const waiters = this._weightedWaiters[weight - 1];
                 if (!waiters) continue;
-                const i = waiters.findIndex((waiter) => waiter.nice >= queuedNice);
+                const i = waiters.findIndex((waiter) => waiter.priority <= queuedPriority);
                 (i === -1 ? waiters : waiters.splice(0, i))
                     .forEach((waiter => waiter.resolve()));
             }
         }
     }
 
-    private _couldLockImmediately(weight: number, nice: number) {
-        return (this._queue.length === 0 || this._queue[0].nice > nice) &&
+    private _couldLockImmediately(weight: number, priority: number) {
+        return (this._queue.length === 0 || this._queue[0].priority < priority) &&
             weight <= this._value;
     }
 
@@ -146,8 +146,8 @@ class Semaphore implements SemaphoreInterface {
     private _weightedWaiters: Array<Array<Waiter>> = [];
 }
 
-function insertSorted<T extends Nice>(a: T[], v: T) {
-    const i = a.findIndex((other) => v.nice < other.nice);
+function insertSorted<T extends Priority>(a: T[], v: T) {
+    const i = a.findIndex((other) => v.priority > other.priority);
     if (i === -1) {
         a.push(v);
     } else {

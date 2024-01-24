@@ -50,35 +50,35 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values.sort(), [2, 2]);
     });
 
-    test('acquire unblocks the nicest waiters last', async () => {
+    test('acquire unblocks high-priority tasks first', async () => {
         const values: Array<number> = [];
 
-        // nice=0; runs first because nothing else is waiting
+        // priority=0; runs first because nothing else is waiting
         semaphore.acquire(2, 0).then(([, release]) => {
             values.push(0);
             setTimeout(release, 100);
         });
 
-        // nice=1; queues first
-        semaphore.acquire(2, 1).then(([, release]) => {
-            values.push(1);
-            setTimeout(release, 100);
-        });
-
-        // nice=-1; jumps ahead of nice=+1
+        // priority=-1; queues first
         semaphore.acquire(2, -1).then(([, release]) => {
             values.push(-1);
             setTimeout(release, 100);
         });
 
+        // priority=+1; jumps ahead of priority=-1
+        semaphore.acquire(2, +1).then(([, release]) => {
+            values.push(+1);
+            setTimeout(release, 100);
+        });
+
         await clock.runAllAsync();
-        assert.deepStrictEqual(values, [0, -1, 1]);
+        assert.deepStrictEqual(values, [0, +1, -1]);
     });
 
-    test('acquire allows high-priority and light tasks to skip the line', async () => {
+    test('acquire allows light high-priority tasks to skip the line', async () => {
         let executed = false;
-        semaphore.acquire(3, 1);
-        semaphore.acquire(1, 0).then(([, release]) => {
+        semaphore.acquire(3, 0);
+        semaphore.acquire(1, 1).then(([, release]) => {
             executed = true;
             setTimeout(release, 100);
         });
@@ -86,7 +86,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.strictEqual(executed, true);
     });
 
-    test('acquire de-prioritizes nice waiters even if they are lighter', async () => {
+    test('acquire prioritizes high-priority tasks even if they are heavier', async () => {
         const values: Array<number> = [];
 
         // two items with weight 1; runs first because nothing else is waiting
@@ -99,20 +99,20 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
             setTimeout(release, 100);
         });
 
-        // nice item with weight 1
-        semaphore.acquire(1, 1).then(([, release]) => {
-            values.push(1);
-            setTimeout(release, 100);
-        });
-
-        // high-priority item with weight 2; should run before the others
-        semaphore.acquire(2, -1).then(([, release]) => {
+        // low-priority item with weight 1
+        semaphore.acquire(1, -1).then(([, release]) => {
             values.push(-1);
             setTimeout(release, 100);
         });
 
+        // high-priority item with weight 2; should run before the others
+        semaphore.acquire(2, +1).then(([, release]) => {
+            values.push(+1);
+            setTimeout(release, 100);
+        });
+
         await clock.runAllAsync();
-        assert.deepStrictEqual(values, [0, 0, -1, 1]);
+        assert.deepStrictEqual(values, [0, 0, +1, -1]);
     });
 
     test('acquire blocks when the semaphore has reached zero until it is released again', async () => {
@@ -297,13 +297,13 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.strictEqual(semaphore.getValue(), 2);
     });
 
-    test('runExclusive executes the nicest waiters last', async () => {
+    test('runExclusive executes high-priority tasks first', async () => {
         const values: number[] = [];
         semaphore.runExclusive(() => { values.push(0) }, 2);
-        semaphore.runExclusive(() => { values.push(1) }, 2, 1);
         semaphore.runExclusive(() => { values.push(-1) }, 2, -1);
+        semaphore.runExclusive(() => { values.push(+1) }, 2, +1);
         await clock.runAllAsync();
-        assert.deepStrictEqual(values, [0, -1, 1]);
+        assert.deepStrictEqual(values, [0, +1, -1]);
     });
 
     test('new semaphore is unlocked', () => {
@@ -518,19 +518,19 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     test('waitForUnlock unblocks only high-priority waiters immediately', async () => {
         const calledBack: number[] = [];
         semaphore.acquire(3, 1);  // A big heavy waiting task
-        semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // High priority
+        semaphore.waitForUnlock(1, 2).then(() => { calledBack.push(2); });  // High priority
         semaphore.waitForUnlock(1, 1).then(() => { calledBack.push(1); });  // Queued behind the heavy task
-        semaphore.waitForUnlock(1, 2).then(() => { calledBack.push(2); });  // Low priority
+        semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // Low priority
         await clock.runAllAsync();
-        assert.deepStrictEqual(calledBack, [0]);
+        assert.deepStrictEqual(calledBack, [2]);
     });
 
-    test('waitForUnlock unblocks nice waiters as the queue drains', async () => {
+    test('waitForUnlock unblocks waiters of descending priority as the queue drains', async () => {
         let calledBack = false;
         let release: SemaphoreInterface.Releaser;
 
-        semaphore.acquire(2, 0).then(([, r]) => { release = r; });
-        semaphore.acquire(2, 2).then(([, r]) => { setTimeout(r, 100); });
+        semaphore.acquire(2, 2).then(([, r]) => { release = r; });
+        semaphore.acquire(2, 0).then(([, r]) => { setTimeout(r, 100); });
 
         semaphore.waitForUnlock(2, 1).then(() => { calledBack = true; });
 

@@ -7,7 +7,7 @@ export function withTimeout(mutex: MutexInterface, timeout: number, timeoutError
 export function withTimeout(semaphore: SemaphoreInterface, timeout: number, timeoutError?: Error): SemaphoreInterface;
 export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError = E_TIMEOUT): any {
     return {
-        acquire: (weight?: number, nice?: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> => {
+        acquire: (weight?: number, priority?: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> => {
             if (weight !== undefined && weight <= 0) {
                 throw new Error(`invalid weight ${weight}: must be positive`);
             }
@@ -21,7 +21,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
                 }, timeout);
 
                 try {
-                    const ticket = await sync.acquire(weight, nice);
+                    const ticket = await sync.acquire(weight, priority);
 
                     if (isTimeout) {
                         const release = Array.isArray(ticket) ? ticket[1] : ticket;
@@ -41,11 +41,11 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             });
         },
 
-        async runExclusive<T>(callback: (value?: number) => Promise<T> | T, weight?: number, nice?: number): Promise<T> {
+        async runExclusive<T>(callback: (value?: number) => Promise<T> | T, weight?: number, priority?: number): Promise<T> {
             let release: () => void = () => undefined;
 
             try {
-                const ticket = await this.acquire(weight, nice);
+                const ticket = await this.acquire(weight, priority);
 
                 if (Array.isArray(ticket)) {
                     release = ticket[1];
@@ -69,14 +69,14 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             return sync.cancel();
         },
 
-        waitForUnlock: (weight?: number, nice?: number): Promise<void> => {
+        waitForUnlock: (weight?: number, priority?: number): Promise<void> => {
             if (weight !== undefined && weight <= 0) {
                 throw new Error(`invalid weight ${weight}: must be positive`);
             }
 
             return new Promise((resolve, reject) => {
                 const handle = setTimeout(() => reject(timeoutError), timeout);
-                sync.waitForUnlock(weight, nice).then(() => {
+                sync.waitForUnlock(weight, priority).then(() => {
                   clearTimeout(handle);
                   resolve();
                 });

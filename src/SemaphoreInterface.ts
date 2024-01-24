@@ -1,9 +1,9 @@
 interface SemaphoreInterface {
-    acquire(weight?: number, nice?: number): Promise<[number, SemaphoreInterface.Releaser]>;
+    acquire(weight?: number, priority?: number): Promise<[number, SemaphoreInterface.Releaser]>;
 
-    runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight?: number, nice?: number): Promise<T>;
+    runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight?: number, priority?: number): Promise<T>;
 
-    waitForUnlock(weight?: number, nice?: number): Promise<void>;
+    waitForUnlock(weight?: number, priority?: number): Promise<void>;
 
     isLocked(): boolean;
 

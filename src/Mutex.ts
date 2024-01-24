@@ -6,13 +6,13 @@ class Mutex implements MutexInterface {
         this._semaphore = new Semaphore(1, cancelError);
     }
 
-    async acquire(nice = 0): Promise<MutexInterface.Releaser> {
+    async acquire(priority = 0): Promise<MutexInterface.Releaser> {
         const [, releaser] = await this._semaphore.acquire();
 
         return releaser;
     }
 
-    runExclusive<T>(callback: MutexInterface.Worker<T>, nice = 0): Promise<T> {
+    runExclusive<T>(callback: MutexInterface.Worker<T>, priority = 0): Promise<T> {
         return this._semaphore.runExclusive(() => callback());
     }
 
@@ -20,7 +20,7 @@ class Mutex implements MutexInterface {
         return this._semaphore.isLocked();
     }
 
-    waitForUnlock(nice = 0): Promise<void> {
+    waitForUnlock(priority = 0): Promise<void> {
         return this._semaphore.waitForUnlock();
     }
 
