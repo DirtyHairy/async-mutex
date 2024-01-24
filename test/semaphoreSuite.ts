@@ -518,9 +518,9 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     test('waitForUnlock unblocks only high-priority waiters immediately', async () => {
         const calledBack: number[] = [];
         semaphore.acquire(3, 1);  // A big heavy waiting task
+        semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // Low priority
         semaphore.waitForUnlock(1, 2).then(() => { calledBack.push(2); });  // High priority
         semaphore.waitForUnlock(1, 1).then(() => { calledBack.push(1); });  // Queued behind the heavy task
-        semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // Low priority
         await clock.runAllAsync();
         assert.deepStrictEqual(calledBack, [2]);
     });
