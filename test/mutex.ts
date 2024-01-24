@@ -108,7 +108,14 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
             assert(flag);
         }));
 
-    test('runExclusive unblocks the highest-priority task first');
+    test('runExclusive unblocks the highest-priority task first', async () => {
+        const values: number[] = [];
+        mutex.runExclusive(() => { values.push(0); }, 0);
+        mutex.runExclusive(() => { values.push(-1); }, -1);
+        mutex.runExclusive(() => { values.push(+1); }, +1);
+        await clock.runAllAsync();
+        assert.deepStrictEqual(values, [0, +1, -1]);
+    });
 
     test('exceptions during runExclusive do not leave mutex locked', async () => {
         let flag = false;
@@ -295,7 +302,25 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         assert.strictEqual(flag, true);
     });
 
-    test('waitForUnlock unblocks the highest-priority task first');
+    test('waitForUnlock unblocks high-priority waiters before low-priority queued tasks', async () => {
+        mutex.acquire(0);  // Immediately scheduled
+        mutex.acquire(0);  // Waiting
+        let flag = false;
+        mutex.waitForUnlock(1).then(() => { flag = true; });
+        mutex.release();
+        await clock.tickAsync(0);
+        assert.strictEqual(flag, true);
+    });
+
+    test('waitForUnlock unblocks low-priority waiters after high-priority queued tasks', async () => {
+        mutex.acquire(0);  // Immediately scheduled
+        mutex.acquire(0);  // Waiting
+        let flag = false;
+        mutex.waitForUnlock(-1).then(() => { flag = true; });
+        mutex.release();
+        await clock.tickAsync(0);
+        assert.strictEqual(flag, false);
+    });
 };
 
 suite('Mutex', () => mutexSuite((e) => new Mutex(e)));

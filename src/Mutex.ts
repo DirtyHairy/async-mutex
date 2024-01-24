@@ -13,7 +13,7 @@ class Mutex implements MutexInterface {
     }
 
     runExclusive<T>(callback: MutexInterface.Worker<T>, priority = 0): Promise<T> {
-        return this._semaphore.runExclusive(() => callback());
+        return this._semaphore.runExclusive(() => callback(), 1, priority);
     }
 
     isLocked(): boolean {
@@ -21,7 +21,7 @@ class Mutex implements MutexInterface {
     }
 
     waitForUnlock(priority = 0): Promise<void> {
-        return this._semaphore.waitForUnlock();
+        return this._semaphore.waitForUnlock(1, priority);
     }
 
     release(): void {
