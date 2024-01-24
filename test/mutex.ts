@@ -36,7 +36,32 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
             assert(flag);
         }));
 
-    test('acquire unblocks the highest-priority task first');
+    test('acquire unblocks the highest-priority task first', () =>
+        withTimer(clock, async () => {
+            const values: number[] = [];
+
+            // Scheduled immediately
+            mutex.acquire(0).then((release) => {
+                values.push(0);
+                setTimeout(release, 100)
+            });
+
+            // Low priority task
+            mutex.acquire(-1).then((release) => {
+                values.push(-1);
+                setTimeout(release, 100)
+            });
+
+            // High priority task; jumps the queue
+            mutex.acquire(1).then((release) => {
+                values.push(1);
+                setTimeout(release, 100)
+            });
+
+            await clock.runAllAsync();
+            assert.deepStrictEqual(values, [0, 1, -1]);
+        })
+    );
 
     test('runExclusive passes result (immediate)', async () => {
         assert.strictEqual(await mutex.runExclusive(() => 10), 10);
@@ -270,7 +295,7 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         assert.strictEqual(flag, true);
     });
 
-    test('waitForUnlock unblocks the highest-priority tasks first');
+    test('waitForUnlock unblocks the highest-priority task first');
 };
 
 suite('Mutex', () => mutexSuite((e) => new Mutex(e)));

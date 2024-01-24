@@ -7,7 +7,14 @@ export function withTimeout(mutex: MutexInterface, timeout: number, timeoutError
 export function withTimeout(semaphore: SemaphoreInterface, timeout: number, timeoutError?: Error): SemaphoreInterface;
 export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError = E_TIMEOUT): any {
     return {
-        acquire: (weight?: number, priority?: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> => {
+        acquire: (weightOrPriority?: number, priority?: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> => {
+            let weight: number | undefined;
+            if (isSemaphore(sync)) {
+                weight = weightOrPriority;
+            } else {
+                weight = undefined;
+                priority = weightOrPriority;
+            }
             if (weight !== undefined && weight <= 0) {
                 throw new Error(`invalid weight ${weight}: must be positive`);
             }
@@ -21,8 +28,10 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
                 }, timeout);
 
                 try {
-                    const ticket = await sync.acquire(weight, priority);
-
+                    const ticket = await (isSemaphore(sync)
+                        ? sync.acquire(weight, priority)
+                        : sync.acquire(priority)
+                    );
                     if (isTimeout) {
                         const release = Array.isArray(ticket) ? ticket[1] : ticket;
 
@@ -89,4 +98,8 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
 
         setValue: (value: number) => (sync as SemaphoreInterface).setValue(value),
     };
+}
+
+function isSemaphore(sync: SemaphoreInterface | MutexInterface): sync is SemaphoreInterface {
+    return (sync as SemaphoreInterface).getValue !== undefined;
 }
