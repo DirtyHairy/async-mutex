@@ -8,28 +8,24 @@ interface Priority {
 
 interface QueueEntry {
     resolve(result: [number, SemaphoreInterface.Releaser]): void;
-
     reject(error: unknown): void;
-
     weight: number;
     priority: number;
 }
 
 interface Waiter {
     resolve(): void;
-
     priority: number;
 }
 
 class Semaphore implements SemaphoreInterface {
-    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {
-    }
+    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
 
     acquire(weight = 1, priority = 0): Promise<[number, SemaphoreInterface.Releaser]> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         return new Promise((resolve, reject) => {
-            const task = { resolve, reject, weight, priority };
+            const task: QueueEntry = { resolve, reject, weight, priority };
             const i = this._queue.findIndex((other) => priority > other.priority);
             if (i === 0 && weight <= this._value) {
                 // Needs immediate dispatch, skip the queue
