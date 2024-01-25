@@ -309,7 +309,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('runExclusive passes the correct weight', async () => {
-        semaphore.runExclusive(() => undefined, 2);
+        semaphore.runExclusive(() => undefined, { weight: 2 });
         assert.strictEqual(semaphore.getValue(), 0);
 
         await clock.runAllAsync();
@@ -318,9 +318,9 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('runExclusive executes high-priority tasks first', async () => {
         const values: number[] = [];
-        semaphore.runExclusive(() => { values.push(0) }, 2);
-        semaphore.runExclusive(() => { values.push(-1) }, 2, -1);
-        semaphore.runExclusive(() => { values.push(+1) }, 2, +1);
+        semaphore.runExclusive(() => { values.push(0) }, { weight: 2 });
+        semaphore.runExclusive(() => { values.push(-1) }, { weight: 2, priority: -1 });
+        semaphore.runExclusive(() => { values.push(+1) }, { weight: 2, priority: +1 });
         await clock.runAllAsync();
         assert.deepStrictEqual(values, [0, +1, -1]);
     });

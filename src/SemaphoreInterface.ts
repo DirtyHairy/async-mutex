@@ -1,7 +1,7 @@
 export interface SemaphoreInterface {
     acquire(options?: SemaphoreOptions): Promise<[number, SemaphoreInterface.Releaser]>;
 
-    runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight?: number, priority?: number): Promise<T>;
+    runExclusive<T>(callback: SemaphoreInterface.Worker<T>, options?: SemaphoreOptions): Promise<T>;
 
     waitForUnlock(weight?: number, priority?: number): Promise<void>;
 

@@ -1,7 +1,7 @@
 export interface MutexInterface {
     acquire(options?: MutexOptions): Promise<MutexInterface.Releaser>;
 
-    runExclusive<T>(callback: MutexInterface.Worker<T>, priority?: number): Promise<T>;
+    runExclusive<T>(callback: MutexInterface.Worker<T>, options?: MutexOptions): Promise<T>;
 
     waitForUnlock(priority?: number): Promise<void>;
 

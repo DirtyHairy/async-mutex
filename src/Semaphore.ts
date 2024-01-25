@@ -39,8 +39,8 @@ class Semaphore implements SemaphoreInterface {
         });
     }
 
-    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight = 1, priority = 0): Promise<T> {
-        const [value, release] = await this.acquire({ weight, priority });
+    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, options?: SemaphoreOptions): Promise<T> {
+        const [value, release] = await this.acquire(options);
 
         try {
             return await callback(value);

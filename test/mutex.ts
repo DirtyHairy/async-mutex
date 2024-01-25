@@ -110,9 +110,9 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
 
     test('runExclusive unblocks the highest-priority task first', async () => {
         const values: number[] = [];
-        mutex.runExclusive(() => { values.push(0); }, 0);
-        mutex.runExclusive(() => { values.push(-1); }, -1);
-        mutex.runExclusive(() => { values.push(+1); }, +1);
+        mutex.runExclusive(() => { values.push(0); }, { priority: 0 });
+        mutex.runExclusive(() => { values.push(-1); }, { priority: -1 });
+        mutex.runExclusive(() => { values.push(+1); }, { priority: +1 });
         await clock.runAllAsync();
         assert.deepStrictEqual(values, [0, +1, -1]);
     });

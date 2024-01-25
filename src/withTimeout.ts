@@ -41,11 +41,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             });
         },
 
-        async runExclusive<T>(callback: (value?: number) => Promise<T> | T, weightOrPriority?: number, priority?: number): Promise<T> {
-            const options = (isSemaphore(sync)
-                ? { weight: weightOrPriority, priority }
-                : { priority: weightOrPriority }
-            );
+        async runExclusive<T>(callback: (value?: number) => Promise<T> | T, options?: MutexOptions | SemaphoreOptions): Promise<T> {
             let release: () => void = () => undefined;
 
             try {
