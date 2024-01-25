@@ -20,8 +20,8 @@ class Mutex implements MutexInterface {
         return this._semaphore.isLocked();
     }
 
-    waitForUnlock(priority = 0): Promise<void> {
-        return this._semaphore.waitForUnlock(1, priority);
+    waitForUnlock(options?: MutexOptions): Promise<void> {
+        return this._semaphore.waitForUnlock(options);
     }
 
     release(): void {

@@ -3,7 +3,7 @@ export interface SemaphoreInterface {
 
     runExclusive<T>(callback: SemaphoreInterface.Worker<T>, options?: SemaphoreOptions): Promise<T>;
 
-    waitForUnlock(weight?: number, priority?: number): Promise<void>;
+    waitForUnlock(options?: SemaphoreOptions): Promise<void>;
 
     isLocked(): boolean;
 

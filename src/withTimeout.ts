@@ -69,24 +69,15 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             return sync.cancel();
         },
 
-        waitForUnlock: (weightOrPriority?: number, priority?: number): Promise<void> => {
-            let weight: number | undefined;
-            if (isSemaphore(sync)) {
-                weight = weightOrPriority;
-            } else {
-                weight = undefined;
-                priority = weightOrPriority;
-            }
-            if (weight !== undefined && weight <= 0) {
-                throw new Error(`invalid weight ${weight}: must be positive`);
+        waitForUnlock: (options?: MutexOptions | SemaphoreOptions): Promise<void> => {
+            options = options || { weight: 1, priority: 0 };
+            if ('weight' in options && options.weight !== undefined && options.weight <= 0) {
+                throw new Error(`invalid weight ${options.weight}: must be positive`);
             }
 
             return new Promise((resolve, reject) => {
                 const handle = setTimeout(() => reject(timeoutError), timeout);
-                (isSemaphore(sync)
-                    ? sync.waitForUnlock(weight, priority)
-                    : sync.waitForUnlock(priority)
-                ).then(() => {
+                sync.waitForUnlock(options).then(() => {
                     clearTimeout(handle);
                     resolve();
                 });
@@ -99,8 +90,4 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
 
         setValue: (value: number) => (sync as SemaphoreInterface).setValue(value),
     };
-}
-
-function isSemaphore(sync: SemaphoreInterface | MutexInterface): sync is SemaphoreInterface {
-    return (sync as SemaphoreInterface).getValue !== undefined;
 }

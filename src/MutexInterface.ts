@@ -3,7 +3,7 @@ export interface MutexInterface {
 
     runExclusive<T>(callback: MutexInterface.Worker<T>, options?: MutexOptions): Promise<T>;
 
-    waitForUnlock(priority?: number): Promise<void>;
+    waitForUnlock(options?: MutexOptions): Promise<void>;
 
     isLocked(): boolean;
 

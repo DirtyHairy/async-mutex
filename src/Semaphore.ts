@@ -49,7 +49,9 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    waitForUnlock(weight = 1, priority = 0): Promise<void> {
+    waitForUnlock(options?: SemaphoreOptions): Promise<void> {
+        const weight = options?.weight !== undefined ? options.weight : 1;
+        const priority = options?.priority || 0;
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         if (this._couldLockImmediately(weight, priority)) {

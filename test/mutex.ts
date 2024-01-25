@@ -306,7 +306,7 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         mutex.acquire({ priority: 0 });  // Immediately scheduled
         mutex.acquire({ priority: 0 });  // Waiting
         let flag = false;
-        mutex.waitForUnlock(1).then(() => { flag = true; });
+        mutex.waitForUnlock({ priority: 1 }).then(() => { flag = true; });
         mutex.release();
         await clock.tickAsync(0);
         assert.strictEqual(flag, true);
@@ -316,7 +316,7 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         mutex.acquire({ priority: 0 });  // Immediately scheduled
         mutex.acquire({ priority: 0 });  // Waiting
         let flag = false;
-        mutex.waitForUnlock(-1).then(() => { flag = true; });
+        mutex.waitForUnlock({ priority: -1 }).then(() => { flag = true; });
         mutex.release();
         await clock.tickAsync(0);
         assert.strictEqual(flag, false);

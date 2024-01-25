@@ -520,8 +520,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         let flag1 = false;
         let flag2 = false;
 
-        semaphore.waitForUnlock(1).then(() => (flag1 = true));
-        semaphore.waitForUnlock(2).then(() => (flag2 = true));
+        semaphore.waitForUnlock({ weight: 1 }).then(() => (flag1 = true));
+        semaphore.waitForUnlock({ weight: 2 }).then(() => (flag2 = true));
 
         semaphore.release(1);
         await clock.tickAsync(0);
@@ -534,13 +534,24 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual([flag1, flag2], [true, true]);
     });
 
+    test('waitForUnlock defaults to weight 1', async () => {
+        let isResolved = false;
+        semaphore.setValue(0);
+        semaphore.waitForUnlock({ weight: undefined }).then(() => { isResolved = true; });
+        await clock.tickAsync(0);
+        assert.strictEqual(isResolved, false);
+        semaphore.release(1);
+        await clock.tickAsync(0);
+        assert.strictEqual(isResolved, true);
+    });
+
     test('waitForUnlock unblocks only high-priority waiters immediately', async () => {
         const calledBack: number[] = [];
         semaphore.setValue(1);
         semaphore.acquire({ weight: 2, priority: 1 });  // A big heavy waiting task
-        semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // Low priority
-        semaphore.waitForUnlock(1, 2).then(() => { calledBack.push(2); });  // High priority
-        semaphore.waitForUnlock(1, 1).then(() => { calledBack.push(1); });  // Queued behind the heavy task
+        semaphore.waitForUnlock({ weight: 1, priority: 0 }).then(() => { calledBack.push(0); });  // Low priority
+        semaphore.waitForUnlock({ weight: 1, priority: 2 }).then(() => { calledBack.push(2); });  // High priority
+        semaphore.waitForUnlock({ weight: 1, priority: 1 }).then(() => { calledBack.push(1); });  // Queued behind the heavy task
         await clock.runAllAsync();
         assert.deepStrictEqual(calledBack, [2]);
     });
@@ -553,7 +564,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         semaphore.acquire({ priority: 2 }).then(([, r]) => { release = r; });
         semaphore.acquire({ priority: 0 }).then(([, r]) => { setTimeout(r, 100); });
 
-        semaphore.waitForUnlock(1, 1).then(() => { calledBack = true; });
+        semaphore.waitForUnlock({ weight: 1, priority: 1 }).then(() => { calledBack = true; });
 
         await clock.tickAsync(0);
         assert.strictEqual(calledBack, false);
@@ -565,7 +576,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('waitForUnlock resolves immediately when the queue is empty', async () => {
         let calledBack = false;
-        semaphore.waitForUnlock(1).then(() => { calledBack = true; });
+        semaphore.waitForUnlock({ weight: 1 }).then(() => { calledBack = true; });
         await clock.tickAsync(0);
         assert.strictEqual(calledBack, true);
     });
@@ -597,6 +608,6 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('trying to waitForUnlock with a negative weight throws', () => {
-        assert.throws(() => semaphore.waitForUnlock(-1));
+        assert.throws(() => semaphore.waitForUnlock({ weight: -1 }));
     });
 };
