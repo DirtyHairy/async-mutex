@@ -1,4 +1,4 @@
-import MutexInterface from './MutexInterface';
+import { MutexOptions, MutexInterface } from './MutexInterface';
 import Semaphore from './Semaphore';
 
 class Mutex implements MutexInterface {
@@ -6,8 +6,9 @@ class Mutex implements MutexInterface {
         this._semaphore = new Semaphore(1, cancelError);
     }
 
-    async acquire(priority = 0): Promise<MutexInterface.Releaser> {
-        const [, releaser] = await this._semaphore.acquire(1, priority);
+    async acquire(options?: MutexOptions): Promise<MutexInterface.Releaser> {
+        const priority = options?.priority || 0;
+        const [, releaser] = await this._semaphore.acquire({ weight: 1, priority });
 
         return releaser;
     }

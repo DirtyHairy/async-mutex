@@ -257,7 +257,7 @@ suite('withTimeout', () => {
             });
 
             test('waitForUnlock times out', async () => {
-                semaphore.acquire(2);
+                semaphore.acquire({ weight: 2 });
                 let state = 'PENDING';
 
                 semaphore.waitForUnlock()
