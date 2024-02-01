@@ -119,11 +119,14 @@ suite('withTimeout', () => {
 
             test('waitForUnlock times out', async () => {
                 mutex.acquire();
-                const unlockPromise = mutex.waitForUnlock();
+                let state = 'PENDING';
 
+                mutex.waitForUnlock()
+                    .then(() => { state = 'RESOLVED'; })
+                    .catch(() => { state = 'REJECTED'; });
                 await clock.tickAsync(120);
 
-                assert.rejects(unlockPromise, error);
+                assert.strictEqual(state, 'REJECTED');
             });
         });
 
@@ -255,11 +258,14 @@ suite('withTimeout', () => {
 
             test('waitForUnlock times out', async () => {
                 semaphore.acquire(2);
-                const unlockPromise = semaphore.waitForUnlock();
+                let state = 'PENDING';
+
+                semaphore.waitForUnlock()
+                    .then(() => { state = 'RESOLVED'; })
+                    .catch(() => { state = 'REJECTED'; });
 
                 await clock.tickAsync(120);
-
-                assert.rejects(unlockPromise, error);
+                assert.strictEqual(state, 'REJECTED');
             });
         });
 
