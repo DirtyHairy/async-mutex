@@ -143,11 +143,11 @@ class Semaphore implements SemaphoreInterface {
 }
 
 function insertSorted<T extends Priority>(a: T[], v: T) {
-    const i = a.findIndex((other) => v.priority > other.priority);
+    const i = findIndexFromEnd(a, (other) => v.priority <= other.priority);
     if (i === -1) {
-        a.push(v);
+        a.splice(0, 0, v);
     } else {
-        a.splice(i, 0, v);
+        a.splice(i + 1, 0, v);
     }
 }
 
