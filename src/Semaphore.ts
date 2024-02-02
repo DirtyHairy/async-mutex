@@ -26,14 +26,14 @@ class Semaphore implements SemaphoreInterface {
 
         return new Promise((resolve, reject) => {
             const task: QueueEntry = { resolve, reject, weight, priority };
-            const i = this._queue.findIndex((other) => priority > other.priority);
-            if (i === 0 && weight <= this._value) {
+            const i = findIndexFromEnd(this._queue, (other) => priority <= other.priority);
+            if (i === -1 && weight <= this._value) {
                 // Needs immediate dispatch, skip the queue
                 this._dispatchItem(task);
             } else if (i === -1) {
-                this._queue.push(task);
+                this._queue.splice(0, 0, task);
             } else {
-                this._queue.splice(i, 0, task);
+                this._queue.splice(i + 1, 0, task);
             }
             this._dispatchQueue();
         });
@@ -149,6 +149,15 @@ function insertSorted<T extends Priority>(a: T[], v: T) {
     } else {
         a.splice(i, 0, v);
     }
+}
+
+function findIndexFromEnd<T>(a: T[], predicate: (e: T) => boolean): number {
+    for (let i = a.length - 1; i >= 0; i--) {
+        if (predicate(a[i])) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 export default Semaphore;
