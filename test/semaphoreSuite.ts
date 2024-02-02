@@ -115,6 +115,24 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values, [0, 0, +1, -1]);
     });
 
+    test('acquire allows light items to run eventually', async () => {
+        let done = false;
+        async function lightLoop() {
+            while (!done) {
+                const [,release] = await semaphore.acquire(1);
+                await new Promise((resolve) => { setTimeout(resolve, 10); });
+                release();
+            }
+        }
+        lightLoop();
+        await clock.tickAsync(5);
+        lightLoop();
+        semaphore.acquire(2).then(() => { done = true; });
+        await clock.tickAsync(10);
+        await clock.tickAsync(10);
+        assert.strictEqual(done, true);
+    });
+
     test('acquire blocks when the semaphore has reached zero until it is released again', async () => {
         const values: Array<number> = [];
 
