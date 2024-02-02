@@ -115,7 +115,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual(values, [0, 0, +1, -1]);
     });
 
-    test('acquire allows light items to run eventually', async () => {
+    test('acquire allows heavy items to run eventually', async () => {
         let done = false;
         async function lightLoop() {
             while (!done) {
