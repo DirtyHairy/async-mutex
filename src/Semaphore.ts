@@ -30,12 +30,9 @@ class Semaphore implements SemaphoreInterface {
             if (i === -1 && weight <= this._value) {
                 // Needs immediate dispatch, skip the queue
                 this._dispatchItem(task);
-            } else if (i === -1) {
-                this._queue.splice(0, 0, task);
             } else {
                 this._queue.splice(i + 1, 0, task);
             }
-            this._dispatchQueue();
         });
     }
 
@@ -58,7 +55,6 @@ class Semaphore implements SemaphoreInterface {
             return new Promise((resolve) => {
                 if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
                 insertSorted(this._weightedWaiters[weight - 1], { resolve, priority });
-                this._dispatchQueue();
             });
         }
     }
@@ -144,11 +140,7 @@ class Semaphore implements SemaphoreInterface {
 
 function insertSorted<T extends Priority>(a: T[], v: T) {
     const i = findIndexFromEnd(a, (other) => v.priority <= other.priority);
-    if (i === -1) {
-        a.splice(0, 0, v);
-    } else {
-        a.splice(i + 1, 0, v);
-    }
+    a.splice(i + 1, 0, v);
 }
 
 function findIndexFromEnd<T>(a: T[], predicate: (e: T) => boolean): number {
