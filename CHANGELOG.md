@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+* Support priority queueing for mutexes and semaphores. A huge "thank you"
+  goes to @dmurvihill who added this feature.
+* Update dependencies.
+
 ## 0.4.1
 
 * Expand documentation and fix a few errors.
@@ -38,7 +44,7 @@ This is a full rewrite of the core implementation.
    0.4.0.
 
    I don't like breaking existing APIs, but using those methods is inherently
-   dangerous as they can accidentially release locks acquired in a completely
+   dangerous as they can accidentally release locks acquired in a completely
    different place. Furthermore, they are mostly useless for semaphores. I consider
    adding them an unfortunate mistake on my end.
 
