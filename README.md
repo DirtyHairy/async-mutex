@@ -291,9 +291,13 @@ the semaphore is released. `runExclusive` returns a promise that adopts the stat
 The semaphore is released and the result rejected if an exception occurs during execution
 of the callback.
 
-`runExclusive` accepts an optional argument `weight`. Specifying a `weight` will decrement the
+`runExclusive` accepts a first optional argument `weight`. Specifying a `weight` will decrement the
 semaphore by the specified value, and the callback will only be invoked once the semaphore's
 value greater or equal to `weight`.
+
+`runExclusive` accepts a second optional argument `priority`. Specifying a greater value for `priority`
+tells the scheduler to run this task before other tasks. `priority` can be any real number. The default
+is zero.
 
 ### Manual locking / releasing
 
@@ -328,9 +332,13 @@ has completed. The `release` callback is idempotent.
 likely deadlock the application. Make sure to call `release` under all circumstances
 and handle exceptions accordingly.
 
-`runExclusive` accepts an optional argument `weight`. Specifying a `weight` will decrement the
-semaphore by the specified value, and the semaphore will only be acquired once the its
+`acquire` accepts a first optional argument `weight`. Specifying a `weight` will decrement the
+semaphore by the specified value, and the semaphore will only be acquired once its
 value is greater or equal to `weight`.
+
+`acquire` accepts a second optional argument `priority`. Specifying a greater value for `priority`
+tells the scheduler to release the semaphore to the caller before other callers. `priority` can be
+any real number. The default is zero.
 
 ### Unscoped release
 
@@ -444,8 +452,10 @@ await semaphore.waitForUnlock();
 // ...
 ```
 
-`waitForUnlock` accepts an optional argument `weight`. If `weight` is specified the promise
-will only resolve once the semaphore's value is greater or equal to `weight`;
+`waitForUnlock` accepts optional arguments `weight` and `priority`. The promise will resolve as soon
+as it is possible to `acquire` the semaphore with the given weight and priority. Scheduled tasks with
+the greatest `priority` values execute first.
+
 
 ## Limiting the time waiting for a mutex or semaphore to become available
 

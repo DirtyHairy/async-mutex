@@ -6,22 +6,22 @@ class Mutex implements MutexInterface {
         this._semaphore = new Semaphore(1, cancelError);
     }
 
-    async acquire(): Promise<MutexInterface.Releaser> {
-        const [, releaser] = await this._semaphore.acquire();
+    async acquire(priority = 0): Promise<MutexInterface.Releaser> {
+        const [, releaser] = await this._semaphore.acquire(1, priority);
 
         return releaser;
     }
 
-    runExclusive<T>(callback: MutexInterface.Worker<T>): Promise<T> {
-        return this._semaphore.runExclusive(() => callback());
+    runExclusive<T>(callback: MutexInterface.Worker<T>, priority = 0): Promise<T> {
+        return this._semaphore.runExclusive(() => callback(), 1, priority);
     }
 
     isLocked(): boolean {
         return this._semaphore.isLocked();
     }
 
-    waitForUnlock(): Promise<void> {
-        return this._semaphore.waitForUnlock();
+    waitForUnlock(priority = 0): Promise<void> {
+        return this._semaphore.waitForUnlock(1, priority);
     }
 
     release(): void {
