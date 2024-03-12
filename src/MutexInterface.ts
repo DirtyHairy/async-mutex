@@ -1,9 +1,9 @@
-interface MutexInterface {
-    acquire(priority?: number): Promise<MutexInterface.Releaser>;
+export interface MutexInterface {
+    acquire(options?: MutexOptions): Promise<MutexInterface.Releaser>;
 
-    runExclusive<T>(callback: MutexInterface.Worker<T>, priority?: number): Promise<T>;
+    runExclusive<T>(callback: MutexInterface.Worker<T>, options?: MutexOptions): Promise<T>;
 
-    waitForUnlock(priority?: number): Promise<void>;
+    waitForUnlock(options?: MutexOptions): Promise<void>;
 
     isLocked(): boolean;
 
@@ -12,7 +12,11 @@ interface MutexInterface {
     cancel(): void;
 }
 
-namespace MutexInterface {
+export interface MutexOptions {
+    priority?: number;
+}
+
+export namespace MutexInterface {
     export interface Releaser {
         (): void;
     }

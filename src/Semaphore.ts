@@ -1,5 +1,5 @@
 import { E_CANCELED } from './errors';
-import SemaphoreInterface from './SemaphoreInterface';
+import { SemaphoreOptions, SemaphoreInterface } from './SemaphoreInterface';
 
 
 interface Priority {
@@ -21,7 +21,10 @@ interface Waiter {
 class Semaphore implements SemaphoreInterface {
     constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
 
-    acquire(weight = 1, priority = 0): Promise<[number, SemaphoreInterface.Releaser]> {
+    acquire(options?: SemaphoreOptions): Promise<[number, SemaphoreInterface.Releaser]> {
+        options = options || { weight: 1, priority: 0 };
+        const weight = options.weight !== undefined ? options.weight : 1;
+        const priority = options.priority !== undefined ? options.priority : 0;
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         return new Promise((resolve, reject) => {
@@ -36,8 +39,8 @@ class Semaphore implements SemaphoreInterface {
         });
     }
 
-    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, weight = 1, priority = 0): Promise<T> {
-        const [value, release] = await this.acquire(weight, priority);
+    async runExclusive<T>(callback: SemaphoreInterface.Worker<T>, options?: SemaphoreOptions): Promise<T> {
+        const [value, release] = await this.acquire(options);
 
         try {
             return await callback(value);
@@ -46,7 +49,9 @@ class Semaphore implements SemaphoreInterface {
         }
     }
 
-    waitForUnlock(weight = 1, priority = 0): Promise<void> {
+    waitForUnlock(options?: SemaphoreOptions): Promise<void> {
+        const weight = options?.weight !== undefined ? options.weight : 1;
+        const priority = options?.priority || 0;
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
 
         if (this._couldLockImmediately(weight, priority)) {
