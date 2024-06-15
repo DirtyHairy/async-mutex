@@ -130,7 +130,7 @@ suite('withTimeout', () => {
             });
         });
 
-        suite('Mutex API', () => mutexSuite((e) => withTimeout(new Mutex(e), 500)));
+        suite('Mutex API', () => mutexSuite((cancelError, unlockCancelError) => withTimeout(new Mutex(cancelError, unlockCancelError), 500)));
     });
 
     suite('Semaphore', () => {
@@ -222,7 +222,7 @@ suite('withTimeout', () => {
                 assert.strictEqual(flag, false);
             });
 
-            test('after a timeout, runExclusive automatically releases the semamphore once it is acquired', async () => {
+            test('after a timeout, runExclusive automatically releases the semaphore once it is acquired', async () => {
                 semaphore.acquire().then(([, release]) => setTimeout(release, 150));
 
                 const result = semaphore.runExclusive(() => undefined);
@@ -270,8 +270,8 @@ suite('withTimeout', () => {
         });
 
         suite('Semaphore API', () =>
-            semaphoreSuite((maxConcurrency: number, err?: Error) =>
-                withTimeout(new Semaphore(maxConcurrency, err), 500)
+            semaphoreSuite((maxConcurrency: number, cancelError?: Error, unlockCancelError?: Error) =>
+                withTimeout(new Semaphore(maxConcurrency, cancelError, unlockCancelError), 500)
             )
         );
     });

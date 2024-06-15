@@ -2,8 +2,8 @@ import MutexInterface from './MutexInterface';
 import Semaphore from './Semaphore';
 
 class Mutex implements MutexInterface {
-    constructor(cancelError?: Error) {
-        this._semaphore = new Semaphore(1, cancelError);
+    constructor(cancelError?: Error, unlockCancelError?: Error) {
+        this._semaphore = new Semaphore(1, cancelError, unlockCancelError);
     }
 
     async acquire(priority = 0): Promise<MutexInterface.Releaser> {
@@ -30,6 +30,10 @@ class Mutex implements MutexInterface {
 
     cancel(): void {
         return this._semaphore.cancel();
+    }
+
+    cancelUnlockWaiters(): void {
+        return this._semaphore.cancelUnlockWaiters();
     }
 
     private _semaphore: Semaphore;

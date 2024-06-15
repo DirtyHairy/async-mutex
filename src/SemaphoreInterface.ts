@@ -14,6 +14,8 @@ interface SemaphoreInterface {
     release(weight?: number): void;
 
     cancel(): void;
+
+    cancelUnlockWaiters(): void;
 }
 
 namespace SemaphoreInterface {

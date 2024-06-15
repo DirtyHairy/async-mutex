@@ -1,4 +1,4 @@
-import { E_CANCELED } from './errors';
+import { E_CANCELED, E_UNLOCKWAITERS_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
 
@@ -15,11 +15,12 @@ interface QueueEntry {
 
 interface Waiter {
     resolve(): void;
+    reject(error: unknown): void;
     priority: number;
 }
 
 class Semaphore implements SemaphoreInterface {
-    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
+    constructor(private _value: number, private _cancelError: Error = E_CANCELED, private _unlockCancelError: Error = E_UNLOCKWAITERS_CANCELED) { }
 
     acquire(weight = 1, priority = 0): Promise<[number, SemaphoreInterface.Releaser]> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
@@ -52,9 +53,9 @@ class Semaphore implements SemaphoreInterface {
         if (this._couldLockImmediately(weight, priority)) {
             return Promise.resolve();
         } else {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
                 if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
-                insertSorted(this._weightedWaiters[weight - 1], { resolve, priority });
+                insertSorted(this._weightedWaiters[weight - 1], { resolve, reject, priority });
             });
         }
     }
@@ -82,6 +83,11 @@ class Semaphore implements SemaphoreInterface {
     cancel(): void {
         this._queue.forEach((entry) => entry.reject(this._cancelError));
         this._queue = [];
+    }
+
+    cancelUnlockWaiters(): void {
+        this._weightedWaiters.forEach(waiters => waiters.forEach(waiter => waiter.reject(this._unlockCancelError)));
+        this._weightedWaiters = [];
     }
 
     private _dispatchQueue(): void {
