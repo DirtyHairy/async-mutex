@@ -140,7 +140,17 @@ class Semaphore implements SemaphoreInterface {
             weight <= this._value;
     }
 
+    /**
+     * `_queue` is sorted in descending order by the `priority` value passed to each lock call.
+     */
+
     private _queue: Array<QueueEntry> = [];
+
+    /**
+     * `_weightedWaiters` is sorted in ascending order by the `weight` argument of each `waitForUnlock(weight, priority)` call.
+     * 
+     * Each element of `_weightedWaiters` contains a list of "unlock waiters", which is sorted in descending order by the `priority` argument of each `waitForUnlock` call.
+     */
     private _weightedWaiters: Array<Array<Waiter>> = [];
 }
 
@@ -148,6 +158,10 @@ function insertSorted<T extends Priority>(a: T[], v: T) {
     const i = findIndexFromEnd(a, (other) => v.priority <= other.priority);
     a.splice(i + 1, 0, v);
 }
+
+/**
+ * Finds the index from the end of the list based on `predicate`, the found index is used to inset an item to `_queue` or `_weightedWaiters`.
+ */
 
 function findIndexFromEnd<T>(a: T[], predicate: (e: T) => boolean): number {
     for (let i = a.length - 1; i >= 0; i--) {
