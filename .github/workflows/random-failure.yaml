@@ -2,12 +2,36 @@ name: Random Failure Test
 
 on:  
   pull_request:
-    paths:
-      - 'backend/**'  # Only run if files in 'backend' change
 
 jobs:
-  random-fail:
+  check-files:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Ensures we have history to compare
+
+      - name: Check for Backend File Changes
+        run: |
+          if git diff --name-only HEAD^ HEAD | grep '^backend/nested'; then
+            echo "backend_changed=true" >> $GITHUB_ENV
+          else
+            echo "backend_changed=false" >> $GITHUB_ENV
+          fi
+
+  skip-tests:
+    needs: check-files
+    runs-on: ubuntu-latest
+    if: env.backend_changed == 'false'  # Ensures the workflow doesn’t fail
+    steps:
+      - name: Skip Tests
+        run: echo "No GTM changes, skipping E2E tests."
+
+  random-fail:
+    needs: check-files
+    runs-on: ubuntu-latest
+    if: env.backend_changed == 'true'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
