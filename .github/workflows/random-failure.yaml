@@ -1,0 +1,23 @@
+name: Random Failure Test
+
+on:  
+  pull_request:
+    paths:
+      - 'backend/**'  # Only run if files in 'backend' change
+
+jobs:
+  random-fail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Random Failure Step
+        run: |
+          if [ $((RANDOM % 2)) -eq 0 ]; then
+            echo "✅ Success!"
+            exit 0
+          else
+            echo "❌ Random Failure!"
+            exit 1
+          fi
