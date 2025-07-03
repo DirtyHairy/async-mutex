@@ -75,9 +75,7 @@ Node 12 and earlier are fine, as are newer versions of Node 13.
 
 **CommonJS:**
 ```javascript
-var Mutex = require('async-mutex').Mutex;
-var Semaphore = require('async-mutex').Semaphore;
-var withTimeout = require('async-mutex').withTimeout;
+const {Mutex, Semaphore, withTimeout} = require('async-mutex');
 ```
 
 **ES6:**
