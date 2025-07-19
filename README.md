@@ -533,6 +533,79 @@ tryAcquire(semaphoreOrMutex, new Error('new fancy error'))
         // ...
     });
 ```
+
+# Migration Guide
+When migrating away from version [] to version [], make the following changes:
+- The `acquire`, `runExclusive`, and `waitForUnlock` methods no longer accept weight or priority parameters directly. They are wrapped in an optional options object instead. For example, replace:
+
+Examples with `Semaphore`:
+```typescript
+semaphore.acquire()  // No change needed
+
+semaphore.acquire(2, 5)  // Old
+semaphore.acquire({ weight: 2, priority: 5 })  // New
+
+semaphore.acquire(undefined, 5)  // Old
+semaphore.acquire({ priority: 5 })  // New
+semaphore.acquire({ weight: 1, priority: 5 })  // Equivalent
+
+semaphore.acquire(2)  // Old
+semaphore.acquire({ weight: 5 })  // New
+
+
+// runExclusive: same change to weight and priority as with acquire()
+
+// No change:
+semaphore.runExclusive((value: number) => {
+  doSomeWork()
+});
+
+// Old
+semaphore.runExclusive((value: number) => {
+  doSomeWork()
+}, 2, -1)
+
+// New
+semaphore.runExclusive((value: number) => {
+  doSomeWork()
+}, { weight: 2, priority: -1 })
+
+
+// waitForUnlock: same
+
+semaphore.waitForUnlock(2, 3)  // Old
+semaphore.waitForUnlock({ weight: 2, priority: 3 })  // New
+```
+
+Examples with `Mutex`:
+```typescript
+mutex.acquire()  // No change needed
+
+mutex.acquire(-1)  // Old
+mutex.acquire({ priority: -1 })  // New
+
+// No change:
+mutex.runExclusive(() => {
+  doSomeWork()
+})
+
+// Old:
+mutex.runExclusive(() => {
+  doSomeWork()
+}, 1)
+
+// New:
+mutex.runExclusive(() => {
+  doSomeWork()
+}, { priority: 1 })
+
+
+mutex.waitForUnlock()  // No change
+
+mutex.waitForUnlock(5)  // Old
+mutex.waitForUnlock({ priority: 5 })  // New
+```
+
 # License
 
 Feel free to use this library under the conditions of the MIT license.
