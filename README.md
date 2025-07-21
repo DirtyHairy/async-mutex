@@ -248,6 +248,49 @@ await mutex.waitForUnlock();
 // ...
 ```
 
+### Cancelling pending unlocks
+
+Pending unlocks, which are the calls to `mutex.waitForUnlock()` can be cancelled by calling `cancelUnlockWaiters()` on the mutex. This will reject
+all pending unlocks with `E_UNLOCKWAITERS_CANCELED`:
+
+Promise style:
+```typescript
+import {E_UNLOCKWAITERS_CANCELED} from 'async-mutex';
+
+mutex
+    .waitForUnlock()
+    .then(() => {
+        // ...
+    })
+    .catch(e => {
+        if (e === E_UNLOCKWAITERS_CANCELED) {
+            // ...
+        }
+    });
+```
+
+async/await:
+```typescript
+import {E_UNLOCKWAITERS_CANCELED} from 'async-mutex';
+
+try {
+    await mutex.waitForUnlock();
+    // ...
+} catch (e) {
+    if (e === E_UNLOCKWAITERS_CANCELED) {
+        // ...
+    }
+}
+```
+
+The error that is thrown can be customized by passing a different error as the second argument to the `Mutex`
+constructor:
+
+```typescript
+import {E_CANCELED} from 'async-mutex';
+
+const mutex = new Mutex(E_CANCELED, new Error('fancy custom error'));
+```
 
 ##  Semaphore API
 
@@ -454,6 +497,50 @@ await semaphore.waitForUnlock();
 as it is possible to `acquire` the semaphore with the given weight and priority. Scheduled tasks with
 the greatest `priority` values execute first.
 
+
+### Cancelling pending unlocks
+
+Pending unlocks, which are the calls to `semaphore.waitForUnlock()` can be cancelled by calling `cancelUnlockWaiters()` on the semaphore. This will reject
+all pending unlocks with `E_UNLOCKWAITERS_CANCELED`:
+
+Promise style:
+```typescript
+import {E_UNLOCKWAITERS_CANCELED} from 'async-mutex';
+
+semaphore
+    .waitForUnlock()
+    .then(() => {
+        // ...
+    })
+    .catch(e => {
+        if (e === E_UNLOCKWAITERS_CANCELED) {
+            // ...
+        }
+    });
+```
+
+async/await:
+```typescript
+import {E_UNLOCKWAITERS_CANCELED} from 'async-mutex';
+
+try {
+    await semaphore.waitForUnlock();
+    // ...
+} catch (e) {
+    if (e === E_UNLOCKWAITERS_CANCELED) {
+        // ...
+    }
+}
+```
+
+The error that is thrown can be customized by passing a different error as the second argument to the `Semaphore`
+constructor:
+
+```typescript
+import {E_CANCELED} from 'async-mutex';
+
+const semaphore = new Semaphore(2, E_CANCELED, new Error('fancy custom error'));
+```
 
 ## Limiting the time waiting for a mutex or semaphore to become available
 

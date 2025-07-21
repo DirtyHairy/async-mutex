@@ -1,4 +1,4 @@
-import { E_CANCELED } from './errors';
+import { E_CANCELED, E_UNLOCKWAITERS_CANCELED } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
 
@@ -15,11 +15,12 @@ interface QueueEntry {
 
 interface Waiter {
     resolve(): void;
+    reject(error: unknown): void;
     priority: number;
 }
 
 class Semaphore implements SemaphoreInterface {
-    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
+    constructor(private _value: number, private _cancelError: Error = E_CANCELED, private _unlockCancelError: Error = E_UNLOCKWAITERS_CANCELED) { }
 
     acquire(weight = 1, priority = 0): Promise<[number, SemaphoreInterface.Releaser]> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);
@@ -52,9 +53,9 @@ class Semaphore implements SemaphoreInterface {
         if (this._couldLockImmediately(weight, priority)) {
             return Promise.resolve();
         } else {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
                 if (!this._weightedWaiters[weight - 1]) this._weightedWaiters[weight - 1] = [];
-                insertSorted(this._weightedWaiters[weight - 1], { resolve, priority });
+                insertSorted(this._weightedWaiters[weight - 1], { resolve, reject, priority });
             });
         }
     }
@@ -82,6 +83,11 @@ class Semaphore implements SemaphoreInterface {
     cancel(): void {
         this._queue.forEach((entry) => entry.reject(this._cancelError));
         this._queue = [];
+    }
+
+    cancelUnlockWaiters(): void {
+        this._weightedWaiters.forEach(waiters => waiters.forEach(waiter => waiter.reject(this._unlockCancelError)));
+        this._weightedWaiters = [];
     }
 
     private _dispatchQueue(): void {
@@ -134,7 +140,17 @@ class Semaphore implements SemaphoreInterface {
             weight <= this._value;
     }
 
+    /**
+     * `_queue` is sorted in descending order by the `priority` value passed to each lock call.
+     */
+
     private _queue: Array<QueueEntry> = [];
+
+    /**
+     * `_weightedWaiters` is sorted in ascending order by the `weight` argument of each `waitForUnlock(weight, priority)` call.
+     * 
+     * Each element of `_weightedWaiters` contains a list of "unlock waiters", which is sorted in descending order by the `priority` argument of each `waitForUnlock` call.
+     */
     private _weightedWaiters: Array<Array<Waiter>> = [];
 }
 
@@ -142,6 +158,10 @@ function insertSorted<T extends Priority>(a: T[], v: T) {
     const i = findIndexFromEnd(a, (other) => v.priority <= other.priority);
     a.splice(i + 1, 0, v);
 }
+
+/**
+ * Finds the index from the end of the list based on `predicate`, the found index is used to inset an item to `_queue` or `_weightedWaiters`.
+ */
 
 function findIndexFromEnd<T>(a: T[], predicate: (e: T) => boolean): number {
     for (let i = a.length - 1; i >= 0; i--) {

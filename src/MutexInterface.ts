@@ -10,6 +10,8 @@ interface MutexInterface {
     release(): void;
 
     cancel(): void;
+
+    cancelUnlockWaiters(): void;
 }
 
 namespace MutexInterface {

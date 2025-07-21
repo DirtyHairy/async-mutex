@@ -2,11 +2,11 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
-import { E_CANCELED } from '../src/errors';
+import { E_CANCELED, E_UNLOCKWAITERS_CANCELED } from '../src/errors';
 import SemaphoreInterface from '../src/SemaphoreInterface';
 import { withTimer } from './util';
 
-export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) => SemaphoreInterface): void => {
+export const semaphoreSuite = (factory: (maxConcurrency: number, cancelError?: Error, unlockCancelError?: Error) => SemaphoreInterface): void => {
     let semaphore: SemaphoreInterface;
     let clock: InstalledClock;
 
@@ -119,7 +119,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         let done = false;
         async function lightLoop() {
             while (!done) {
-                const [,release] = await semaphore.acquire(1);
+                const [, release] = await semaphore.acquire(1);
                 await new Promise((resolve) => { setTimeout(resolve, 10); });
                 release();
             }
@@ -595,5 +595,42 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('trying to waitForUnlock with a negative weight throws', () => {
         assert.throws(() => semaphore.waitForUnlock(-1));
+    });
+
+    test('cancelUnlockWaiters rejects all pending unlockWaiters with E_UNLOCKWAITERS_CANCELED', async () => {
+        await semaphore.acquire();
+        await semaphore.acquire();
+
+        const res1 = semaphore.waitForUnlock();
+        const res2 = semaphore.waitForUnlock();
+
+        semaphore.cancelUnlockWaiters();
+
+        await assert.rejects(res1, E_UNLOCKWAITERS_CANCELED);
+        await assert.rejects(res2, E_UNLOCKWAITERS_CANCELED);
+    });
+
+    test('cancelUnlockWaiters rejects with a custom error if provided', async () => {
+        const err = new Error();
+        const semaphore = factory(2, E_CANCELED, err);
+
+        await semaphore.acquire();
+        await semaphore.acquire();
+
+        const res1 = semaphore.waitForUnlock();
+
+        semaphore.cancelUnlockWaiters();
+
+        await assert.rejects(res1, err);
+    });
+
+    test('cancelUnlockWaiters works fine with isolated weights', async () => {
+        const res1 = semaphore.waitForUnlock(3);
+        const res2 = semaphore.waitForUnlock(5);
+
+        semaphore.cancelUnlockWaiters();
+
+        await assert.rejects(res1, E_UNLOCKWAITERS_CANCELED);
+        await assert.rejects(res2, E_UNLOCKWAITERS_CANCELED);
     });
 };

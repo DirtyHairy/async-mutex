@@ -2,12 +2,12 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
-import { E_CANCELED } from '../src/errors';
+import { E_CANCELED, E_UNLOCKWAITERS_CANCELED } from '../src/errors';
 import Mutex from '../src/Mutex';
 import MutexInterface from '../src/MutexInterface';
 import { withTimer } from './util';
 
-export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): void => {
+export const mutexSuite = (factory: (cancelError?: Error, unlockCancelError?: Error) => MutexInterface): void => {
     let mutex: MutexInterface;
     let clock: InstalledClock;
 
@@ -191,7 +191,7 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         assert.strictEqual(v, 3);
     });
 
-    test('cancel rejects all pending locks witth E_CANCELED', async () => {
+    test('cancel rejects all pending locks with E_CANCELED', async () => {
         await mutex.acquire();
 
         const ticket = mutex.acquire();
@@ -321,6 +321,31 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         await clock.tickAsync(0);
         assert.strictEqual(flag, false);
     });
+
+    test('cancelUnlockWaiters rejects all pending unlockWaiters with E_UNLOCKWAITERS_CANCELED', async () => {
+        await mutex.acquire();
+
+        const res1 = mutex.waitForUnlock();
+        const res2 = mutex.waitForUnlock();
+
+        mutex.cancelUnlockWaiters();
+
+        await assert.rejects(res1, E_UNLOCKWAITERS_CANCELED);
+        await assert.rejects(res2, E_UNLOCKWAITERS_CANCELED);
+    });
+
+    test('cancelUnlockWaiters rejects with a custom error if provided', async () => {
+        const err = new Error();
+        const mutex = factory(E_CANCELED, err);
+
+        await mutex.acquire();
+
+        const res1 = mutex.waitForUnlock();
+
+        mutex.cancelUnlockWaiters();
+
+        await assert.rejects(res1, err);
+    });
 };
 
-suite('Mutex', () => mutexSuite((e) => new Mutex(e)));
+suite('Mutex', () => mutexSuite((cancelError, unlockCancelError) => new Mutex(cancelError, unlockCancelError)));
