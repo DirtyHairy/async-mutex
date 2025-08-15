@@ -35,11 +35,11 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     test('acquire with weight does block while the semaphore has reached zero until it is released again', async () => {
         const values: Array<number> = [];
 
-        semaphore.acquire(2).then(([value, release]) => {
+        semaphore.acquire({ weight: 2 }).then(([value, release]) => {
             values.push(value);
             setTimeout(release, 100);
         });
-        semaphore.acquire(1).then(([value]) => values.push(value));
+        semaphore.acquire({ weight: 1 }).then(([value]) => values.push(value));
 
         await clock.tickAsync(0);
 
@@ -52,21 +52,22 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('acquire unblocks high-priority tasks first', async () => {
         const values: Array<number> = [];
+        semaphore.setValue(1);
 
         // priority=0; runs first because nothing else is waiting
-        semaphore.acquire(2, 0).then(([, release]) => {
+        semaphore.acquire({ priority: 0 }).then(([, release]) => {
             values.push(0);
             setTimeout(release, 100);
         });
 
         // priority=-1; queues first
-        semaphore.acquire(2, -1).then(([, release]) => {
+        semaphore.acquire({ priority: -1 }).then(([, release]) => {
             values.push(-1);
             setTimeout(release, 100);
         });
 
         // priority=+1; jumps ahead of priority=-1
-        semaphore.acquire(2, +1).then(([, release]) => {
+        semaphore.acquire({ weight: 1 }).then(([, release]) => {
             values.push(+1);
             setTimeout(release, 100);
         });
@@ -77,8 +78,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('acquire allows light high-priority tasks to skip the line', async () => {
         let executed = false;
-        semaphore.acquire(3, 0);
-        semaphore.acquire(1, 1).then(([, release]) => {
+        semaphore.acquire({ weight: 3, priority: 0 });
+        semaphore.acquire({ weight: 1, priority: 1 }).then(([, release]) => {
             executed = true;
             setTimeout(release, 100);
         });
@@ -90,23 +91,23 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         const values: Array<number> = [];
 
         // two items with weight 1; runs first because nothing else is waiting
-        semaphore.acquire(1, 0).then(([, release]) => {
+        semaphore.acquire({ priority: 0 }).then(([, release]) => {
             values.push(0);
             setTimeout(release, 100);
         });
-        semaphore.acquire(1, 0).then(([, release]) => {
+        semaphore.acquire({ priority: 0 }).then(([, release]) => {
             values.push(0);
             setTimeout(release, 100);
         });
 
         // low-priority item with weight 1
-        semaphore.acquire(1, -1).then(([, release]) => {
+        semaphore.acquire({ priority: -1 }).then(([, release]) => {
             values.push(-1);
             setTimeout(release, 100);
         });
 
         // high-priority item with weight 2; should run before the others
-        semaphore.acquire(2, +1).then(([, release]) => {
+        semaphore.acquire({ weight: 2, priority: +1 }).then(([, release]) => {
             values.push(+1);
             setTimeout(release, 100);
         });
@@ -119,7 +120,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         let done = false;
         async function lightLoop() {
             while (!done) {
-                const [,release] = await semaphore.acquire(1);
+                const [,release] = await semaphore.acquire({ weight: 1 });
                 await new Promise((resolve) => { setTimeout(resolve, 10); });
                 release();
             }
@@ -127,7 +128,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         lightLoop();
         await clock.tickAsync(5);
         lightLoop();
-        semaphore.acquire(2).then(() => { done = true; });
+        semaphore.acquire({ weight: 2 }).then(() => { done = true; });
         await clock.tickAsync(10);
         await clock.tickAsync(10);
         assert.strictEqual(done, true);
@@ -218,7 +219,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('the releaser increments by the correct weight', async () => {
-        await semaphore.acquire(2);
+        await semaphore.acquire({ weight: 2 });
         assert.strictEqual(semaphore.getValue(), 0);
 
         semaphore.release(2);
@@ -308,7 +309,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('runExclusive passes the correct weight', async () => {
-        semaphore.runExclusive(() => undefined, 2);
+        semaphore.runExclusive(() => undefined, { weight: 2 });
         assert.strictEqual(semaphore.getValue(), 0);
 
         await clock.runAllAsync();
@@ -317,9 +318,9 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('runExclusive executes high-priority tasks first', async () => {
         const values: number[] = [];
-        semaphore.runExclusive(() => { values.push(0) }, 2);
-        semaphore.runExclusive(() => { values.push(-1) }, 2, -1);
-        semaphore.runExclusive(() => { values.push(+1) }, 2, +1);
+        semaphore.runExclusive(() => { values.push(0) }, { weight: 2 });
+        semaphore.runExclusive(() => { values.push(-1) }, { weight: 2, priority: -1 });
+        semaphore.runExclusive(() => { values.push(+1) }, { weight: 2, priority: +1 });
         await clock.runAllAsync();
         assert.deepStrictEqual(values, [0, +1, -1]);
     });
@@ -367,9 +368,9 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         let flag2 = false;
         let flag3 = false;
 
-        semaphore.acquire(1).then(() => (flag1 = true));
-        semaphore.acquire(2).then(() => (flag2 = true));
-        semaphore.acquire(4).then(() => (flag3 = true));
+        semaphore.acquire({ weight: 1 }).then(() => (flag1 = true));
+        semaphore.acquire({ weight: 2 }).then(() => (flag2 = true));
+        semaphore.acquire({ weight: 4 }).then(() => (flag3 = true));
 
         semaphore.setValue(3);
 
@@ -382,8 +383,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('setValue works fine with isolated weights', async () => {
         let flag = false;
-        semaphore.acquire(4).then(() => (flag = true));
-        semaphore.acquire(8);
+        semaphore.acquire({ weight: 4 }).then(() => (flag = true));
+        semaphore.acquire({ weight: 8 });
 
         semaphore.setValue(4);
         await clock.tickAsync(1);
@@ -436,7 +437,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('a canceled waiter will not lock the semaphore again', async () => {
-        const [, release] = await semaphore.acquire(2);
+        const [, release] = await semaphore.acquire({ weight: 2 });
 
         semaphore.acquire().then(undefined, () => undefined);
         semaphore.cancel();
@@ -449,7 +450,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('cancel works fine with isolated weights', () => {
-        const ticket = semaphore.acquire(3);
+        const ticket = semaphore.acquire({ weight: 3 });
 
         semaphore.cancel();
 
@@ -514,13 +515,13 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('waitForUnlock only unblocks if the configured weight can be acquired', async () => {
-        await semaphore.acquire(2);
+        await semaphore.acquire({ weight: 2 });
 
         let flag1 = false;
         let flag2 = false;
 
-        semaphore.waitForUnlock(1).then(() => (flag1 = true));
-        semaphore.waitForUnlock(2).then(() => (flag2 = true));
+        semaphore.waitForUnlock({ weight: 1 }).then(() => (flag1 = true));
+        semaphore.waitForUnlock({ weight: 2 }).then(() => (flag2 = true));
 
         semaphore.release(1);
         await clock.tickAsync(0);
@@ -533,12 +534,24 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.deepStrictEqual([flag1, flag2], [true, true]);
     });
 
+    test('waitForUnlock defaults to weight 1', async () => {
+        let isResolved = false;
+        semaphore.setValue(0);
+        semaphore.waitForUnlock({ weight: undefined }).then(() => { isResolved = true; });
+        await clock.tickAsync(0);
+        assert.strictEqual(isResolved, false);
+        semaphore.release(1);
+        await clock.tickAsync(0);
+        assert.strictEqual(isResolved, true);
+    });
+
     test('waitForUnlock unblocks only high-priority waiters immediately', async () => {
         const calledBack: number[] = [];
-        semaphore.acquire(3, 1);  // A big heavy waiting task
-        semaphore.waitForUnlock(1, 0).then(() => { calledBack.push(0); });  // Low priority
-        semaphore.waitForUnlock(1, 2).then(() => { calledBack.push(2); });  // High priority
-        semaphore.waitForUnlock(1, 1).then(() => { calledBack.push(1); });  // Queued behind the heavy task
+        semaphore.setValue(1);
+        semaphore.acquire({ weight: 2, priority: 1 });  // A big heavy waiting task
+        semaphore.waitForUnlock({ weight: 1, priority: 0 }).then(() => { calledBack.push(0); });  // Low priority
+        semaphore.waitForUnlock({ weight: 1, priority: 2 }).then(() => { calledBack.push(2); });  // High priority
+        semaphore.waitForUnlock({ weight: 1, priority: 1 }).then(() => { calledBack.push(1); });  // Queued behind the heavy task
         await clock.runAllAsync();
         assert.deepStrictEqual(calledBack, [2]);
     });
@@ -546,11 +559,12 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     test('waitForUnlock unblocks waiters of descending priority as the queue drains', async () => {
         let calledBack = false;
         let release: SemaphoreInterface.Releaser;
+        semaphore.setValue(1);
 
-        semaphore.acquire(2, 2).then(([, r]) => { release = r; });
-        semaphore.acquire(2, 0).then(([, r]) => { setTimeout(r, 100); });
+        semaphore.acquire({ priority: 2 }).then(([, r]) => { release = r; });
+        semaphore.acquire({ priority: 0 }).then(([, r]) => { setTimeout(r, 100); });
 
-        semaphore.waitForUnlock(2, 1).then(() => { calledBack = true; });
+        semaphore.waitForUnlock({ weight: 1, priority: 1 }).then(() => { calledBack = true; });
 
         await clock.tickAsync(0);
         assert.strictEqual(calledBack, false);
@@ -562,14 +576,14 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
     test('waitForUnlock resolves immediately when the queue is empty', async () => {
         let calledBack = false;
-        semaphore.waitForUnlock(1).then(() => { calledBack = true; });
+        semaphore.waitForUnlock({ weight: 1 }).then(() => { calledBack = true; });
         await clock.tickAsync(0);
         assert.strictEqual(calledBack, true);
     });
 
     test('waitForUnlock only unblocks when the semaphore can actually be acquired again', async () => {
-        semaphore.acquire(2);
-        semaphore.acquire(2);
+        semaphore.acquire({ weight: 2 });
+        semaphore.acquire({ weight: 2 });
 
         let flag = false;
         semaphore.waitForUnlock().then(() => (flag = true));
@@ -586,7 +600,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('trying to acquire with a negative weight throws', () => {
-        assert.throws(() => semaphore.acquire(-1));
+        assert.throws(() => semaphore.acquire({ weight: -1 }));
     });
 
     test('trying to release with a negative weight throws', () => {
@@ -594,6 +608,6 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
     });
 
     test('trying to waitForUnlock with a negative weight throws', () => {
-        assert.throws(() => semaphore.waitForUnlock(-1));
+        assert.throws(() => semaphore.waitForUnlock({ weight: -1 }));
     });
 };
