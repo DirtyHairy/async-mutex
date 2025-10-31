@@ -2,7 +2,7 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
-import { E_CANCELED } from '../src/errors';
+import { CanceledError } from '../src/errors';
 import Mutex from '../src/Mutex';
 import MutexInterface from '../src/MutexInterface';
 import { withTimer } from './util';
@@ -191,7 +191,7 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
         assert.strictEqual(v, 3);
     });
 
-    test('cancel rejects all pending locks witth E_CANCELED', async () => {
+    test('cancel rejects all pending locks with CanceledError', async () => {
         await mutex.acquire();
 
         const ticket = mutex.acquire();
@@ -199,8 +199,8 @@ export const mutexSuite = (factory: (cancelError?: Error) => MutexInterface): vo
 
         mutex.cancel();
 
-        await assert.rejects(ticket, E_CANCELED);
-        await assert.rejects(result, E_CANCELED);
+        await assert.rejects(ticket, (err: unknown): boolean => err instanceof CanceledError);
+        await assert.rejects(result, (err: unknown): boolean => err instanceof CanceledError);
     });
 
     test('cancel rejects with a custom error if provided', async () => {

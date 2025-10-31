@@ -2,7 +2,7 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
-import { E_CANCELED } from '../src/errors';
+import { CanceledError } from '../src/errors';
 import SemaphoreInterface from '../src/SemaphoreInterface';
 import { withTimer } from './util';
 
@@ -408,7 +408,7 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         semaphore.release();
     });
 
-    test('cancel rejects all pending locks with E_CANCELED', async () => {
+    test('cancel rejects all pending locks with CanceledError', async () => {
         await semaphore.acquire();
         await semaphore.acquire();
 
@@ -417,8 +417,8 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
 
         semaphore.cancel();
 
-        await assert.rejects(ticket, E_CANCELED);
-        await assert.rejects(result, E_CANCELED);
+        await assert.rejects(ticket, (err: unknown) => err instanceof CanceledError);
+        await assert.rejects(result, (err: unknown) => err instanceof CanceledError);
     });
 
     test('cancel rejects with a custom error if provided', async () => {

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { E_TIMEOUT } from './errors';
+import { TimeoutError } from './errors';
 import MutexInterface from './MutexInterface';
 import SemaphoreInterface from './SemaphoreInterface';
 
 export function withTimeout(mutex: MutexInterface, timeout: number, timeoutError?: Error): MutexInterface;
 export function withTimeout(semaphore: SemaphoreInterface, timeout: number, timeoutError?: Error): SemaphoreInterface;
-export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError = E_TIMEOUT): any {
+export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: number, timeoutError?: Error): any {
     return {
         acquire: (weightOrPriority?: number, priority?: number): Promise<MutexInterface.Releaser | [number, SemaphoreInterface.Releaser]> => {
             let weight: number | undefined;
@@ -24,7 +24,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
 
                 const handle = setTimeout(() => {
                     isTimeout = true;
-                    reject(timeoutError);
+                    reject(timeoutError ?? new TimeoutError());
                 }, timeout);
 
                 try {
@@ -91,7 +91,7 @@ export function withTimeout(sync: MutexInterface | SemaphoreInterface, timeout: 
             }
 
             return new Promise((resolve, reject) => {
-                const handle = setTimeout(() => reject(timeoutError), timeout);
+                const handle = setTimeout(() => reject(timeoutError ?? new TimeoutError()), timeout);
                 (isSemaphore(sync)
                     ? sync.waitForUnlock(weight, priority)
                     : sync.waitForUnlock(priority)

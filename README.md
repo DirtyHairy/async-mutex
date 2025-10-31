@@ -178,11 +178,11 @@ mutex.isLocked();
 ### Cancelling pending locks
 
 Pending locks can be cancelled by calling `cancel()` on the mutex. This will reject
-all pending locks with `E_CANCELED`:
+all pending locks with `CanceledError`:
 
 Promise style:
 ```typescript
-import {E_CANCELED} from 'async-mutex';
+import {CanceledError} from 'async-mutex';
 
 mutex
     .runExclusive(() => {
@@ -192,7 +192,7 @@ mutex
         // ...
     })
     .catch(e => {
-        if (e === E_CANCELED) {
+        if (e instanceof CanceledError) {
             // ...
         }
     });
@@ -200,21 +200,21 @@ mutex
 
 async/await:
 ```typescript
-import {E_CANCELED} from 'async-mutex';
+import {CanceledError} from 'async-mutex';
 
 try {
     await mutex.runExclusive(() => {
         // ...
     });
 } catch (e) {
-    if (e === E_CANCELED) {
+    if (e instanceof CanceledError) {
         // ...
     }
 }
 ```
 
 This works with `acquire`, too:
-if `acquire` is used for locking, the resulting promise will reject with `E_CANCELED`.
+if `acquire` is used for locking, the resulting promise will reject with `CanceledError`.
 
 The error that is thrown can be customized by passing a different error to the `Mutex`
 constructor:
@@ -380,11 +380,11 @@ semaphore.setValue();
 ### Cancelling pending locks
 
 Pending locks can be cancelled by calling `cancel()` on the semaphore. This will reject
-all pending locks with `E_CANCELED`:
+all pending locks with `CanceledError`:
 
 Promise style:
 ```typescript
-import {E_CANCELED} from 'async-mutex';
+import {CanceledError} from 'async-mutex';
 
 semaphore
     .runExclusive(() => {
@@ -394,7 +394,7 @@ semaphore
         // ...
     })
     .catch(e => {
-        if (e === E_CANCELED) {
+        if (e instanceof CanceledError) {
             // ...
         }
     });
@@ -402,21 +402,21 @@ semaphore
 
 async/await:
 ```typescript
-import {E_CANCELED} from 'async-mutex';
+import {CanceledError} from 'async-mutex';
 
 try {
     await semaphore.runExclusive(() => {
         // ...
     });
 } catch (e) {
-    if (e === E_CANCELED) {
+    if (e instanceof CanceledError) {
         // ...
     }
 }
 ```
 
 This works with `acquire`, too:
-if `acquire` is used for locking, the resulting promise will reject with `E_CANCELED`.
+if `acquire` is used for locking, the resulting promise will reject with `CanceledError`.
 
 The error that is thrown can be customized by passing a different error to the `Semaphore`
 constructor:
@@ -463,7 +463,7 @@ to both semaphores and mutexes and changes the behavior of `acquire` and
 `runExclusive` accordingly.
 
 ```typescript
-import {withTimeout, E_TIMEOUT} from 'async-mutex';
+import {withTimeout, TimeoutError} from 'async-mutex';
 
 const mutexWithTimeout = withTimeout(new Mutex(), 100);
 const semaphoreWithTimeout = withTimeout(new Semaphore(5), 100);
@@ -473,7 +473,7 @@ The API of the decorated mutex or semaphore is unchanged.
 
 The second argument of `withTimeout` is the timeout in milliseconds. After the
 timeout is exceeded, the promise returned by `acquire` and `runExclusive` will
-reject with `E_TIMEOUT`. The latter will not run the provided callback in case
+reject with `TimeoutError`. The latter will not run the provided callback in case
 of an timeout.
 
 The third argument of `withTimeout` is optional and can be used to
@@ -489,11 +489,11 @@ const semaphoreWithTimeout = withTimeout(new Semaphore(5), 100, new Error('new f
 A shortcut exists for the case where you do not want to wait for a lock to
 be available at all. The `tryAcquire` decorator can be applied to both mutexes
 and semaphores and changes the behavior of `acquire` and `runExclusive` to
-immediately throw `E_ALREADY_LOCKED` if the mutex is not available.
+immediately throw `AlreadyLockedError` if the mutex is not available.
 
 Promise style:
 ```typescript
-import {tryAcquire, E_ALREADY_LOCKED} from 'async-mutex';
+import {tryAcquire, AlreadyLockedError} from 'async-mutex';
 
 tryAcquire(semaphoreOrMutex)
     .runExclusive(() => {
@@ -503,7 +503,7 @@ tryAcquire(semaphoreOrMutex)
         // ...
     })
     .catch(e => {
-        if (e === E_ALREADY_LOCKED) {
+        if (e instanceof AlreadyLockedError) {
             // ...
         }
     });
@@ -511,14 +511,14 @@ tryAcquire(semaphoreOrMutex)
 
 async/await:
 ```typescript
-import {tryAcquire, E_ALREADY_LOCKED} from 'async-mutex';
+import {tryAcquire, AlreadyLockedError} from 'async-mutex';
 
 try {
     await tryAcquire(semaphoreOrMutex).runExclusive(() => {
         // ...
     });
 } catch (e) {
-    if (e === E_ALREADY_LOCKED) {
+    if (e instanceof AlreadyLockedError) {
         // ...
     }
 }
@@ -533,6 +533,42 @@ tryAcquire(semaphoreOrMutex, new Error('new fancy error'))
         // ...
     });
 ```
+
+## Migration from v0.x to v1.0
+
+**v1.0 introduces breaking changes** to improve error handling with proper stack traces.
+
+### Error Checking
+
+**Before (v0.x):**
+```javascript
+import { E_TIMEOUT, E_CANCELED, E_ALREADY_LOCKED } from 'async-mutex';
+
+try {
+  await mutex.runExclusive(() => { /* ... */ });
+} catch (e) {
+  if (e === E_TIMEOUT) { }          // ❌ No longer works
+  if (e === E_CANCELED) { }         // ❌ No longer works
+  if (e === E_ALREADY_LOCKED) { }   // ❌ No longer works
+}
+```
+
+**After (v1.0+):**
+```javascript
+import { TimeoutError, CanceledError, AlreadyLockedError } from 'async-mutex';
+
+try {
+  await mutex.runExclusive(() => { /* ... */ });
+} catch (e) {
+  if (e instanceof TimeoutError) { }         // ✓ Use instanceof
+  if (e instanceof CanceledError) { }        // ✓ Use instanceof
+  if (e instanceof AlreadyLockedError) { }   // ✓ Use instanceof
+}
+```
+
+The old singleton errors had unusable stack traces (captured at module load time). Error classes
+provide accurate, helpful stack traces for debugging.
+
 # License
 
 Feel free to use this library under the conditions of the MIT license.
