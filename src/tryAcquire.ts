@@ -1,4 +1,4 @@
-import { E_ALREADY_LOCKED } from './errors';
+import { AlreadyLockedError } from './errors';
 import MutexInterface from './MutexInterface';
 import SemaphoreInterface from './SemaphoreInterface';
 import { withTimeout } from './withTimeout';
@@ -8,8 +8,8 @@ export function tryAcquire(semaphore: SemaphoreInterface, alreadyAcquiredError?:
 // eslint-disable-next-lisne @typescript-eslint/explicit-module-boundary-types
 export function tryAcquire(
     sync: MutexInterface | SemaphoreInterface,
-    alreadyAcquiredError = E_ALREADY_LOCKED
+    alreadyAcquiredError?: Error
 ): typeof sync {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return withTimeout(sync as any, 0, alreadyAcquiredError);
+    return withTimeout(sync as any, 0, alreadyAcquiredError ?? new AlreadyLockedError());
 }

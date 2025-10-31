@@ -1,4 +1,4 @@
-import { E_CANCELED } from './errors';
+import { CanceledError } from './errors';
 import SemaphoreInterface from './SemaphoreInterface';
 
 
@@ -19,7 +19,7 @@ interface Waiter {
 }
 
 class Semaphore implements SemaphoreInterface {
-    constructor(private _value: number, private _cancelError: Error = E_CANCELED) {}
+    constructor(private _value: number, private _cancelError: Error = new CanceledError()) {}
 
     acquire(weight = 1, priority = 0): Promise<[number, SemaphoreInterface.Releaser]> {
         if (weight <= 0) throw new Error(`invalid weight ${weight}: must be positive`);

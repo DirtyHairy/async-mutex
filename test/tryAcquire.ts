@@ -2,7 +2,7 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
-import { E_ALREADY_LOCKED } from '../src/errors';
+import { AlreadyLockedError } from '../src/errors';
 import Mutex from '../src/Mutex';
 import Semaphore from '../src/Semaphore';
 import { tryAcquire } from '../src/tryAcquire';
@@ -31,7 +31,7 @@ suite('tryAcquire', () => {
             await assert.rejects(ticket, error);
         });
 
-        test('acquire rejects with E_ALREADY_LOCKER if no error is provided', async () => {
+        test('acquire rejects with AlreadyLockedError if no error is provided', async () => {
             const mutex = tryAcquire(new Mutex());
             await mutex.acquire();
 
@@ -40,7 +40,7 @@ suite('tryAcquire', () => {
 
             await clock.tickAsync(0);
 
-            await assert.rejects(ticket, E_ALREADY_LOCKED);
+            await assert.rejects(ticket, (err: unknown) => err instanceof AlreadyLockedError);
         });
 
         test('acquire locks the mutex if it is not already locked', async () => {
@@ -76,7 +76,7 @@ suite('tryAcquire', () => {
             await assert.rejects(ticket, error);
         });
 
-        test('acquire rejects with E_ALREADY_LOCKER if no error is provided', async () => {
+        test('acquire rejects with AlreadyLockedError if no error is provided', async () => {
             const semaphore = tryAcquire(new Semaphore(2));
 
             await semaphore.acquire();
@@ -87,7 +87,7 @@ suite('tryAcquire', () => {
 
             await clock.tickAsync(0);
 
-            await assert.rejects(ticket, E_ALREADY_LOCKED);
+            await assert.rejects(ticket, (err: unknown) => err instanceof AlreadyLockedError);
         });
 
         test('acquire locks the semaphore if it is not already locked', async () => {

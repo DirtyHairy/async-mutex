@@ -2,7 +2,7 @@ import * as assert from 'assert';
 
 import { InstalledClock, install } from '@sinonjs/fake-timers';
 
-import { E_TIMEOUT } from './../src/errors';
+import { TimeoutError } from './../src/errors';
 import Mutex from '../src/Mutex';
 import MutexInterface from '../src/MutexInterface';
 import Semaphore from '../src/Semaphore';
@@ -59,7 +59,7 @@ suite('withTimeout', () => {
                 assert.strictEqual(flag, true);
             });
 
-            test('runExclusive rejects with E_TIMEOUT if no error is specified', async () => {
+            test('runExclusive rejects with TimeoutError if no error is specified', async () => {
                 const mutex = withTimeout(new Mutex(), 100);
                 mutex.acquire().then((release) => setTimeout(release, 150));
 
@@ -68,7 +68,7 @@ suite('withTimeout', () => {
 
                 await clock.tickAsync(110);
 
-                await assert.rejects(result, E_TIMEOUT);
+                await assert.rejects(result, (err: unknown) => err instanceof TimeoutError);
             });
 
             test('runExclusive does not run the callback if timeout is exceeded', async () => {
@@ -194,7 +194,7 @@ suite('withTimeout', () => {
                 await assert.rejects(result, error);
             });
 
-            test('runExclusive rejects with E_TIMEOUT if no error is specified', async () => {
+            test('runExclusive rejects with TimeoutError if no error is specified', async () => {
                 const semaphore = withTimeout(new Semaphore(2), 0);
 
                 semaphore.acquire();
@@ -205,7 +205,7 @@ suite('withTimeout', () => {
 
                 await clock.tickAsync(110);
 
-                await assert.rejects(result, E_TIMEOUT);
+                await assert.rejects(result, (err: unknown) => err instanceof TimeoutError);
             });
 
             test('runExclusive does not run the callback if timeout is exceeded', async () => {
