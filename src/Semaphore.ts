@@ -82,6 +82,7 @@ class Semaphore implements SemaphoreInterface {
     cancel(): void {
         this._queue.forEach((entry) => entry.reject(this._cancelError));
         this._queue = [];
+        this._drainUnlockWaiters();
     }
 
     private _dispatchQueue(): void {
@@ -111,7 +112,7 @@ class Semaphore implements SemaphoreInterface {
 
     private _drainUnlockWaiters(): void {
         if (this._queue.length === 0) {
-            for (let weight = this._value; weight > 0; weight--) {
+            for (let weight = Math.min(this._value, this._weightedWaiters.length); weight > 0; weight--) {
                 const waiters = this._weightedWaiters[weight - 1];
                 if (!waiters) continue;
                 waiters.forEach((waiter) => waiter.resolve());
@@ -119,7 +120,7 @@ class Semaphore implements SemaphoreInterface {
             }
         } else {
             const queuedPriority = this._queue[0].priority;
-            for (let weight = this._value; weight > 0; weight--) {
+            for (let weight = Math.min(this._value, this._weightedWaiters.length); weight > 0; weight--) {
                 const waiters = this._weightedWaiters[weight - 1];
                 if (!waiters) continue;
                 const i = waiters.findIndex((waiter) => waiter.priority <= queuedPriority);

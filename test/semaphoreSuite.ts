@@ -567,6 +567,48 @@ export const semaphoreSuite = (factory: (maxConcurrency: number, err?: Error) =>
         assert.strictEqual(calledBack, true);
     });
 
+    test('cancel unblocks eligible waitForUnlock calls behind a queued acquire', async () => {
+        const rejected = semaphore.acquire(3, 2).catch((error) => error);
+        const unlocked: number[] = [];
+        semaphore.waitForUnlock(1, 0).then(() => unlocked.push(1));
+        semaphore.waitForUnlock(2, 1).then(() => unlocked.push(2));
+        semaphore.waitForUnlock(3, 0).then(() => unlocked.push(3));
+        await clock.tickAsync(0);
+        assert.deepStrictEqual(unlocked, []);
+
+        semaphore.cancel();
+        await clock.tickAsync(0);
+        assert.strictEqual(await rejected, E_CANCELED);
+        assert.deepStrictEqual(unlocked, [2, 1]);
+        assert.strictEqual(semaphore.getValue(), 2);
+    });
+
+    test('cancel preserves capacity held by active acquisitions for unlock waiters', async () => {
+        const [, release] = await semaphore.acquire(1);
+        const rejected = semaphore.acquire(2).catch((error) => error);
+        const unlocked: number[] = [];
+        semaphore.waitForUnlock(1).then(() => unlocked.push(1));
+        semaphore.waitForUnlock(2).then(() => unlocked.push(2));
+
+        semaphore.cancel();
+        await clock.tickAsync(0);
+        assert.strictEqual(await rejected, E_CANCELED);
+        assert.deepStrictEqual(unlocked, [1]);
+        assert.strictEqual(semaphore.getValue(), 1);
+
+        release();
+        await clock.tickAsync(0);
+        assert.deepStrictEqual(unlocked, [1, 2]);
+    });
+
+    test('cancel handles large and unlimited capacity without unlock waiters', () => {
+        for (const capacity of [Number.MAX_SAFE_INTEGER, Infinity]) {
+            const largeSemaphore = factory(capacity);
+            largeSemaphore.cancel();
+            assert.strictEqual(largeSemaphore.getValue(), capacity);
+        }
+    });
+
     test('waitForUnlock only unblocks when the semaphore can actually be acquired again', async () => {
         semaphore.acquire(2);
         semaphore.acquire(2);
